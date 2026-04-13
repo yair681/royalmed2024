@@ -232,7 +232,7 @@ app.post('/login', (req, res) => {
   req.session.full_name  = user.full_name;
   req.session.role       = user.role;
   db.logActivity(user.username, 'login', '', req.ip, user.id);
-  res.redirect('/dashboard');
+  req.session.save(() => res.redirect('/dashboard'));
 });
 
 app.get('/logout', (req, res) => {
