@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: royalmed-ai
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: NODE_ENV
+        value: production
