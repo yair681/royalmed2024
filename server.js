@@ -661,6 +661,6 @@ app.get('/report/:id', loginRequired, (req, res) => {
 
 // ─── Start ────────────────────────────────────────────
 const PORT = parseInt(process.env.PORT || '4000');
-app.listen(PORT, '127.0.0.1', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`[RoyalMed] Server running on http://localhost:${PORT}`);
 });
