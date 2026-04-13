@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%= patient.name %> | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <div>
+    <a href="/patients" class="back-link">← חזרה למטופלים</a>
+    <h1 class="page-title"><%= patient.name %></h1>
+    <p class="page-subtitle">
+      <% if (patient.phone) { %>📞 <%= patient.phone %><% } %>
+      <% if (patient.birth_year) { %> | 📅 <%= patient.birth_year %><% } %>
+      <% if (patient.skin_type) { %> | 🧬 <%= patient.skin_type %><% } %>
+    </p>
+    <% if (patient.health_insurance) { %>
+    <div style="margin-top:8px;display:flex;align-items:center;gap:10px">
+      <% const ins = patient.health_insurance; %>
+      <% if (ins==='כללית') { %><img src="/static/images/clalit.svg" style="height:28px"><% } %>
+      <% if (ins==='מכבי') { %><img src="/static/images/maccabi.svg" style="height:28px"><% } %>
+      <% if (ins==='מאוחדת') { %><img src="/static/images/meuhedet.png" style="height:28px"><% } %>
+      <% if (ins==='לאומית') { %><img src="/static/images/leumit.png" style="height:28px"><% } %>
+      <span style="font-size:13px;color:#64748b"><%= ins %></span>
+    </div>
+    <% } %>
+  </div>
+  <div class="page-header-actions">
+    <a href="/diagnosis" class="btn btn-primary">+ אבחון חדש</a>
+    <a href="/visualization" class="btn btn-secondary">+ הדמיה חדשה</a>
+  </div>
+</div>
+
+<% if (patient.notes) { %><div class="patient-notes card"><strong>הערות:</strong> <%= patient.notes %></div><% } %>
+
+<div class="section-title">📋 היסטוריית אבחונים (<%= consultations.length %>)</div>
+<% if (consultations.length) { %>
+<div class="history-list">
+<% for (const c of consultations) { %>
+<div class="history-card">
+  <div class="history-card-header">
+    <span class="history-date"><%= c.created_at.slice(0,16) %></span>
+    <span class="badge badge-blue"><%= c.model_used || 'AI' %></span>
+  </div>
+  <% if (c.image_path) { %><img src="<%= c.image_path %>" class="history-thumb" alt="תמונת בדיקה"><% } %>
+  <% if (c.additional_info) { %><div class="history-note"><strong>הערות:</strong> <%= c.additional_info %></div><% } %>
+  <div class="history-result"><%= c.ai_result ? c.ai_result.slice(0,300) : '' %><%= c.ai_result && c.ai_result.length > 300 ? '...' : '' %></div>
+  <details><summary class="expand-link">קרא פענוח מלא</summary>
+    <div class="history-result-full"><%- c.ai_result ? c.ai_result.replace(/\n/g,'<br>') : '' %></div>
+  </details>
+</div>
+<% } %>
+</div>
+<% } else { %><div class="empty-state-inline">אין אבחונים עדיין</div><% } %>
+
+<div class="section-title">✨ היסטוריית הדמיות (<%= visualizations.length %>)</div>
+<% if (visualizations.length) { %>
+<div class="viz-grid">
+<% for (const v of visualizations) { %>
+<div class="viz-card">
+  <div class="viz-treatment"><%= v.treatment_name %></div>
+  <div class="viz-images">
+    <% if (v.before_image_path) { %><div class="viz-side"><div class="viz-label">לפני</div><img src="<%= v.before_image_path %>" class="viz-img"></div><% } %>
+    <% if (v.after_image_url) { %><div class="viz-side"><div class="viz-label">אחרי</div><img src="<%= v.after_image_url %>" class="viz-img"></div><% } %>
+  </div>
+  <div class="viz-date"><%= v.created_at.slice(0,10) %></div>
+</div>
+<% } %>
+</div>
+<% } else { %><div class="empty-state-inline">אין הדמיות עדיין</div><% } %>
+</div>
+<script src="/static/js/app.js"></script>
+<script>function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));</script>
+</body></html>

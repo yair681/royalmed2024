@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%= lead.full_name %> | לידים</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <div>
+    <a href="/leads" class="back-link">← חזרה ללידים</a>
+    <h1 class="page-title"><%= lead.full_name %></h1>
+    <p class="page-subtitle">ליד #<%= lead.id %> · נוצר <%= lead.created_at ? lead.created_at.slice(0,10) : '' %></p>
+  </div>
+  <div style="display:flex;gap:10px">
+    <a href="/leads/<%= lead.id %>/edit" class="btn btn-outline">✏️ עריכה</a>
+    <button onclick="deleteLead(<%= lead.id %>)" class="btn" style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5">🗑 מחק</button>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px">
+  <div class="card">
+    <div class="card-title">👤 פרטים אישיים</div>
+    <div class="detail-list">
+      <div class="detail-row"><span class="detail-label">שם מלא</span><span class="detail-value"><%= lead.full_name %></span></div>
+      <div class="detail-row"><span class="detail-label">טלפון</span><span class="detail-value"><% if (lead.phone) { %><a href="tel:<%= lead.phone %>" style="color:var(--primary)"><%= lead.phone %></a><% } else { %>—<% } %></span></div>
+      <div class="detail-row"><span class="detail-label">מייל</span><span class="detail-value"><% if (lead.email) { %><a href="mailto:<%= lead.email %>" style="color:var(--primary)"><%= lead.email %></a><% } else { %>—<% } %></span></div>
+      <div class="detail-row"><span class="detail-label">גיל</span><span class="detail-value"><%= lead.age || '—' %></span></div>
+      <div class="detail-row"><span class="detail-label">מין</span><span class="detail-value"><%= lead.gender || '—' %></span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎯 פרטי ליד</div>
+    <div class="detail-list">
+      <div class="detail-row"><span class="detail-label">טיפול מעניין</span><span class="detail-value"><strong><%= lead.treatment_interest || '—' %></strong></span></div>
+      <div class="detail-row"><span class="detail-label">מקור</span><span class="detail-value"><span class="badge badge-blue"><%= lead.source %></span></span></div>
+      <div class="detail-row">
+        <span class="detail-label">סטטוס</span>
+        <span class="detail-value">
+          <select onchange="updateStatus(<%= lead.id %>,this.value)" style="border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:14px;background:var(--surface);color:var(--text)">
+            <% for (const s of statuses) { %><option value="<%= s %>" <%= lead.status===s?'selected':'' %>><%= s %></option><% } %>
+          </select>
+        </span>
+      </div>
+      <div class="detail-row"><span class="detail-label">עודכן</span><span class="detail-value" style="color:#64748b;font-size:13px"><%= lead.updated_at ? lead.updated_at.slice(0,16) : '—' %></span></div>
+    </div>
+  </div>
+
+  <% if (lead.description) { %>
+  <div class="card">
+    <div class="card-title">💬 מה הלקוח אמר</div>
+    <p style="color:var(--text-secondary);line-height:1.7;white-space:pre-wrap"><%= lead.description %></p>
+  </div>
+  <% } %>
+
+  <div class="card">
+    <div class="card-title">📝 הערות פנימיות</div>
+    <% if (lead.notes) { %><p style="color:var(--text-secondary);line-height:1.7;white-space:pre-wrap"><%= lead.notes %></p><% } else { %><p style="color:#94a3b8">אין הערות</p><% } %>
+    <textarea id="notesArea" class="form-input" rows="3" style="margin-top:12px" placeholder="הוסף הערה..."><%= lead.notes || '' %></textarea>
+    <button onclick="saveNotes()" class="btn btn-outline btn-sm" style="margin-top:8px">💾 שמור הערות</button>
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+async function updateStatus(id,status){await fetch(`/api/leads/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});}
+async function saveNotes(){const notes=document.getElementById('notesArea').value;const res=await fetch(`/api/leads/<%= lead.id %>/notes`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes})});const data=await res.json();if(data.success){const btn=document.querySelector('[onclick="saveNotes()"]');btn.textContent='✓ נשמר';setTimeout(()=>btn.textContent='💾 שמור הערות',2000);}}
+async function deleteLead(id){if(!confirm('למחוק ליד זה?'))return;const res=await fetch(`/api/leads/${id}/delete`,{method:'POST'});const data=await res.json();if(data.success)window.location.href='/leads';}
+</script>
+<style>.detail-list{display:flex;flex-direction:column;gap:12px}.detail-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}.detail-row:last-child{border-bottom:none}.detail-label{color:#64748b;font-size:14px}.detail-value{font-size:14px;font-weight:500}</style>
+</body></html>

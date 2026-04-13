@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%= agent ? 'עריכת' : 'יצירת' %> Agent | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <div>
+    <a href="/agents" class="back-link">← חזרה ל-Agents</a>
+    <h1 class="page-title"><%= agent ? '✏️ עריכת' : '🤖 יצירת' %> Agent</h1>
+    <p class="page-subtitle">הגדר את האופי, הידע וההתנהגות של ה-Agent</p>
+  </div>
+</div>
+
+<div class="builder-layout">
+  <div class="builder-main">
+    <div class="card">
+      <div class="card-title">📝 פרטים בסיסיים</div>
+      <div class="builder-row">
+        <div class="form-group" style="width:90px">
+          <label class="form-label">אייקון</label>
+          <div class="icon-picker">
+            <div class="icon-display" id="iconDisplay" onclick="document.getElementById('iconUpload').click()" style="cursor:pointer;overflow:hidden">
+              <% if (agent && agent.icon && agent.icon.startsWith('/')) { %><img src="<%= agent.icon %>" style="width:100%;height:100%;object-fit:cover;border-radius:12px"><% } else { %><%= (agent && agent.icon) || '🤖' %><% } %>
+            </div>
+            <input type="file" id="iconUpload" accept="image/*" style="display:none" onchange="uploadIcon(this)">
+            <div style="font-size:10px;color:#64748b;text-align:center;margin-top:4px">לחץ להעלות</div>
+          </div>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">שם ה-Agent *</label>
+          <input type="text" id="agentName" class="form-input" placeholder="לדוגמה: יועץ טיפולי..." value="<%= (agent && agent.name) || '' %>">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">תיאור קצר</label>
+        <input type="text" id="agentDesc" class="form-input" placeholder="מה ה-Agent הזה עושה?" value="<%= (agent && agent.description) || '' %>">
+      </div>
+      <div class="form-group">
+        <label class="form-label">מודל AI</label>
+        <div class="model-selector">
+          <% [['gpt-4o','GPT-4o (מומלץ)'],['gpt-4o-mini','GPT-4o Mini (מהיר)'],['gpt-4-turbo','GPT-4 Turbo']].forEach(([m,label]) => { %>
+          <label class="model-option">
+            <input type="radio" name="agentModel" value="<%= m %>" <%- ((agent && agent.model===m) || (!agent && m==='gpt-4o')) ? 'checked' : '' %>>
+            <span class="model-card"><span class="model-name"><%= label.split('(')[0].trim() %></span><span class="model-desc"><%= label.includes('(') ? '('+label.split('(')[1] : '' %></span></span>
+          </label>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🧠 הוראות ואופי ה-Agent</div>
+      <p class="card-desc">כאן אתה מלמד את ה-Agent מי הוא, מה תפקידו ואיך להתנהג.</p>
+      <div class="form-group">
+        <label class="form-label">System Prompt — הוראות מלאות * <span class="help-tag" onclick="showPromptHelp()" style="cursor:pointer;color:#006889">? עזרה</span></label>
+        <textarea id="agentPrompt" class="form-input form-textarea-large" placeholder="אתה [שם], מומחה ב[תחום] של מרפאת רויאל-מד..."><%= (agent && agent.system_prompt) || '' %></textarea>
+      </div>
+      <div id="promptHelp" style="display:none;background:#f0f9ff;border-radius:8px;padding:12px;margin-top:8px">
+        <strong>💡 טיפים:</strong> התחל ב"אתה [תפקיד]...", ציין שם המרפאה, הגדר סגנון ועברית.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📚 בסיס ידע (אופציונלי)</div>
+      <p class="card-desc">הוסף מידע ספציפי שה-Agent צריך לדעת — פרוטוקולים, מחירים, נהלים.</p>
+      <textarea id="agentKnowledge" class="form-input form-textarea-large" placeholder="לדוגמה: מחיר בוטוקס 150₪ ליחידה, פגישות ב-ראשון-חמישי 9:00-18:00..."><%= (agent && agent.knowledge) || '' %></textarea>
+    </div>
+
+    <div class="builder-actions">
+      <a href="/agents" class="btn btn-outline">ביטול</a>
+      <button onclick="testAgent()" class="btn btn-secondary">🧪 בדוק Agent</button>
+      <button onclick="saveAgent()" class="btn btn-primary btn-large" id="saveBtn">💾 <%= agent ? 'שמור שינויים' : 'צור Agent' %></button>
+    </div>
+  </div>
+
+  <div class="builder-preview">
+    <div class="card">
+      <div class="card-title">👁 תצוגה מקדימה</div>
+      <div class="preview-agent-card">
+        <div class="preview-icon" id="previewIcon"><%= (agent && agent.icon) || '🤖' %></div>
+        <div class="preview-name" id="previewName"><%= (agent && agent.name) || 'שם ה-Agent' %></div>
+        <div class="preview-desc" id="previewDesc"><%= (agent && agent.description) || 'תיאור ה-Agent' %></div>
+        <div class="preview-model" id="previewModel"><%= (agent && agent.model) || 'gpt-4o' %></div>
+      </div>
+      <div id="testSection" style="display:none">
+        <div class="test-title">🧪 בדיקה מהירה</div>
+        <div class="test-messages" id="testMessages"></div>
+        <div class="test-input-row">
+          <input type="text" id="testInput" class="form-input" placeholder="שאל משהו...">
+          <button onclick="sendTestMessage()" class="btn btn-primary btn-sm">שלח</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+const agentId = <%- agent ? agent.id : 'null' %>;
+let currentIcon = '<%- ((agent && agent.icon) || "🤖").replace(/'/g, "\\'") %>';
+
+const params = new URLSearchParams(window.location.search);
+if (params.get('name')) document.getElementById('agentName').value = params.get('name');
+if (params.get('icon')) { currentIcon = params.get('icon'); document.getElementById('iconDisplay').textContent = currentIcon; }
+if (params.get('desc')) document.getElementById('agentDesc').value = params.get('desc');
+if (params.get('prompt')) document.getElementById('agentPrompt').value = params.get('prompt');
+
+document.getElementById('agentName').addEventListener('input', updatePreview);
+document.getElementById('agentDesc').addEventListener('input', updatePreview);
+document.querySelectorAll('input[name="agentModel"]').forEach(r => r.addEventListener('change', updatePreview));
+
+function updatePreview() {
+  const pi = document.getElementById('previewIcon');
+  if (currentIcon.startsWith('/')) pi.innerHTML = `<img src="${currentIcon}" style="width:60px;height:60px;object-fit:cover;border-radius:12px">`;
+  else pi.textContent = currentIcon;
+  document.getElementById('previewName').textContent = document.getElementById('agentName').value || 'שם ה-Agent';
+  document.getElementById('previewDesc').textContent = document.getElementById('agentDesc').value || 'תיאור ה-Agent';
+  document.getElementById('previewModel').textContent = document.querySelector('input[name="agentModel"]:checked')?.value || 'gpt-4o';
+}
+updatePreview();
+
+async function uploadIcon(input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append('icon', file);
+  const res = await fetch('/api/agents/upload-icon', { method: 'POST', body: fd });
+  const data = await res.json();
+  if (data.success) { currentIcon = data.url; document.getElementById('iconDisplay').innerHTML = `<img src="${data.url}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`; updatePreview(); }
+}
+
+function showPromptHelp() { const el = document.getElementById('promptHelp'); el.style.display = el.style.display==='none'?'block':'none'; }
+
+async function saveAgent() {
+  const name = document.getElementById('agentName').value.trim();
+  const prompt = document.getElementById('agentPrompt').value.trim();
+  if (!name) { alert('יש להכניס שם ל-Agent'); return; }
+  if (!prompt) { alert('יש להכניס הוראות ל-Agent'); return; }
+  const btn = document.getElementById('saveBtn'); btn.disabled = true; btn.textContent = '⏳ שומר...';
+  const payload = { id: agentId, name, description: document.getElementById('agentDesc').value, icon: currentIcon, system_prompt: prompt, knowledge: document.getElementById('agentKnowledge').value, model: document.querySelector('input[name="agentModel"]:checked')?.value || 'gpt-4o', active: 1 };
+  const res = await fetch('/api/agents/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const data = await res.json();
+  if (data.success) window.location.href = '/agents';
+  else { alert('שגיאה: ' + data.error); btn.disabled = false; btn.textContent = '💾 שמור'; }
+}
+
+function testAgent() {
+  if (!document.getElementById('agentName').value || !document.getElementById('agentPrompt').value) { alert('הכנס שם והוראות לפני הבדיקה'); return; }
+  document.getElementById('testSection').style.display = 'block';
+}
+
+let tempSessionId = 'test-' + Date.now();
+async function sendTestMessage() {
+  const input = document.getElementById('testInput'); const msg = input.value.trim(); if (!msg) return;
+  const payload = { id: agentId, name: document.getElementById('agentName').value, description: document.getElementById('agentDesc').value, icon: currentIcon, system_prompt: document.getElementById('agentPrompt').value, knowledge: document.getElementById('agentKnowledge').value, model: document.querySelector('input[name="agentModel"]:checked')?.value || 'gpt-4o', active: 1 };
+  const saveRes = await fetch('/api/agents/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const saveData = await saveRes.json(); if (!saveData.success) { alert('שגיאה'); return; }
+  addTestMsg('user', msg); input.value = ''; addTestMsg('typing', '⏳...');
+  const chatRes = await fetch(`/api/agents/${saveData.id || agentId}/chat`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ message: msg, session_id: tempSessionId }) });
+  const chatData = await chatRes.json();
+  document.querySelector('.typing-test')?.remove();
+  addTestMsg(chatData.success ? 'assistant' : 'error', chatData.success ? chatData.response : '⚠ ' + chatData.error);
+}
+function addTestMsg(role, text) { const d = document.createElement('div'); d.className=`test-msg test-msg-${role}`; if(role==='typing')d.className+=' typing-test'; d.textContent=text; document.getElementById('testMessages').appendChild(d); document.getElementById('testMessages').scrollTop=9999; }
+document.getElementById('testInput')?.addEventListener('keydown', e => { if(e.key==='Enter') sendTestMessage(); });
+</script>
+</body></html>

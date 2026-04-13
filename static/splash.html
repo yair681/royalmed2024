@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoyalMed AI — טוען...</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a1628;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    overflow: hidden;
+    color: #fff;
+  }
+
+  /* רקע חלקיקים */
+  .bg {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, #003d5220 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, #00aae615 0%, transparent 50%),
+                #0a1628;
+  }
+
+  .card {
+    position: relative;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(0,170,230,0.2);
+    border-radius: 20px;
+    padding: 48px 52px 40px;
+    width: 480px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,170,230,0.1);
+    animation: fadeIn 0.6s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* לוגו */
+  .logo-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+
+  .logo-icon {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #006889, #00AAE6);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    box-shadow: 0 4px 20px rgba(0,170,230,0.4);
+  }
+
+  .logo-text h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #00AAE6, #ffffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .logo-text p {
+    font-size: 12px;
+    color: #7ab3c8;
+    margin-top: 2px;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,170,230,0.3), transparent);
+    margin: 24px 0;
+  }
+
+  /* סטטוס */
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    min-height: 28px;
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(0,170,230,0.2);
+    border-top-color: #00AAE6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .spinner.done {
+    border-color: #22c55e;
+    border-top-color: #22c55e;
+    animation: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2322c55e' stroke-width='3'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/14px no-repeat;
+  }
+
+  .spinner.error {
+    border-color: #ef4444;
+    border-top-color: #ef4444;
+    animation: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ef4444' stroke-width='3'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E") center/14px no-repeat;
+  }
+
+  #status-text {
+    font-size: 14px;
+    color: #a8d4e6;
+    transition: all 0.3s;
+  }
+
+  /* פס התקדמות */
+  .bar-wrap {
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, #006889, #00AAE6);
+    transition: width 0.4s ease;
+    box-shadow: 0 0 10px rgba(0,170,230,0.5);
+  }
+
+  .bar-fill.done {
+    background: linear-gradient(90deg, #16a34a, #22c55e);
+    box-shadow: 0 0 10px rgba(34,197,94,0.5);
+  }
+
+  .bar-fill.error {
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    box-shadow: 0 0 10px rgba(239,68,68,0.5);
+  }
+
+  #pct {
+    font-size: 11px;
+    color: #4a7a8a;
+    text-align: left;
+    direction: ltr;
+    margin-bottom: 24px;
+  }
+
+  /* שגיאה / חסימה */
+  .error-box {
+    display: none;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  .error-box h3 {
+    font-size: 15px;
+    color: #fca5a5;
+    margin-bottom: 6px;
+  }
+
+  .error-box p {
+    font-size: 12px;
+    color: #f87171;
+    line-height: 1.6;
+  }
+
+  .error-box .contact {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #fbbf24;
+    font-weight: 600;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 28px;
+    text-align: center;
+    font-size: 11px;
+    color: #2a4a5a;
+  }
+
+  .footer span { color: #006889; }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+
+<div class="card">
+  <div class="logo-wrap">
+    <div class="logo-icon">⚕</div>
+    <div class="logo-text">
+      <h1>ROYAL-MED AI</h1>
+      <p>מערכת AI לאסתטיקה רפואית</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="status-row">
+    <div class="spinner" id="spinner"></div>
+    <span id="status-text">מפעיל מערכת...</span>
+  </div>
+
+  <div class="bar-wrap">
+    <div class="bar-fill" id="bar"></div>
+  </div>
+  <div id="pct">0%</div>
+
+  <div class="error-box" id="error-box">
+    <h3 id="error-title">הגישה נחסמה</h3>
+    <p id="error-body"></p>
+    <div class="contact" id="error-contact"></div>
+  </div>
+
+  <div class="footer">
+    מופעל על ידי <span>Master Code</span> &nbsp;|&nbsp; mastercode.co.il
+  </div>
+</div>
+
+<script>
+const bar      = document.getElementById('bar');
+const pctEl    = document.getElementById('pct');
+const statusEl = document.getElementById('status-text');
+const spinner  = document.getElementById('spinner');
+const errBox   = document.getElementById('error-box');
+
+let progress  = 0;
+let targetPct = 10;
+let attempts  = 0;
+const MAX_ATTEMPTS = 120; // 60 שניות
+
+const steps = [
+  { at:  5, msg: 'מפעיל מערכת...' },
+  { at: 20, msg: 'טוען מסד נתונים...' },
+  { at: 45, msg: 'מפעיל שרת AI...' },
+  { at: 70, msg: 'מכין ממשק...' },
+  { at: 90, msg: 'כמעט מוכן...' },
+];
+
+function setStatus(msg) {
+  statusEl.textContent = msg;
+}
+
+function animateBar() {
+  if (progress < targetPct) {
+    progress = Math.min(progress + 0.8, targetPct);
+    bar.style.width = progress + '%';
+    pctEl.textContent = Math.round(progress) + '%';
+  }
+  requestAnimationFrame(animateBar);
+}
+animateBar();
+
+function advanceSteps() {
+  steps.forEach(s => {
+    if (progress >= s.at) setStatus(s.msg);
+  });
+}
+
+function showError(title, body, contact) {
+  spinner.className = 'spinner error';
+  bar.className = 'bar-fill error';
+  bar.style.width = '100%';
+  pctEl.textContent = '';
+  setStatus(title);
+  errBox.style.display = 'block';
+  document.getElementById('error-title').textContent = title;
+  document.getElementById('error-body').textContent = body || '';
+  document.getElementById('error-contact').textContent = contact || '';
+}
+
+function showDone() {
+  targetPct = 100;
+  spinner.className = 'spinner done';
+  bar.className = 'bar-fill done';
+  setStatus('המערכת מוכנה! מעביר...');
+  setTimeout(() => {
+    window.location.href = 'http://localhost:5000';
+  }, 800);
+}
+
+async function checkReady() {
+  attempts++;
+
+  // עדכן פס לפי זמן
+  targetPct = Math.min(10 + (attempts / MAX_ATTEMPTS) * 80, 88);
+  advanceSteps();
+
+  if (attempts > MAX_ATTEMPTS) {
+    showError('לא ניתן להפעיל את המערכת', 'זמן הטעינה עבר. נסה להפעיל מחדש.', 'תמיכה: 052-209-1733');
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:5000/health', { cache: 'no-store' });
+    if (res.ok) {
+      showDone();
+      return;
+    }
+  } catch (e) {
+    // עדיין לא מוכן
+  }
+
+  setTimeout(checkReady, 500);
+}
+
+// התחל לבדוק אחרי 800ms
+setTimeout(checkReady, 800);
+</script>
+</body>
+</html>

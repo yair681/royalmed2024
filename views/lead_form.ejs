@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%= lead ? 'עריכת ליד' : 'ליד חדש' %> | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <div>
+    <a href="/leads" class="back-link">← חזרה ללידים</a>
+    <h1 class="page-title"><%= lead ? '✏️ עריכת ליד' : '🎯 ליד חדש' %></h1>
+  </div>
+</div>
+
+<div style="max-width:680px">
+  <form method="POST">
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">פרטים אישיים</div>
+      <div class="builder-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">שם מלא *</label>
+          <input type="text" name="full_name" class="form-input" required value="<%= lead ? lead.full_name : '' %>" placeholder="שם ושם משפחה">
+        </div>
+        <div class="form-group" style="width:120px">
+          <label class="form-label">גיל</label>
+          <input type="number" name="age" class="form-input" min="1" max="120" value="<%= lead && lead.age ? lead.age : '' %>" placeholder="גיל">
+        </div>
+      </div>
+      <div class="builder-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">טלפון</label>
+          <input type="tel" name="phone" class="form-input" value="<%= lead ? lead.phone||'' : '' %>" placeholder="05X-XXXXXXX">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">מייל</label>
+          <input type="email" name="email" class="form-input" value="<%= lead ? lead.email||'' : '' %>" placeholder="name@email.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">מין</label>
+        <div style="display:flex;gap:12px;margin-top:6px">
+          <% for (const g of ['נקבה','זכר','אחר']) { %>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="radio" name="gender" value="<%= g %>" <%= (lead && lead.gender===g) || (!lead && g==='נקבה') ? 'checked' : '' %>> <%= g %>
+          </label>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">פרטי ליד</div>
+      <div class="builder-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">טיפול מעניין</label>
+          <select name="treatment_interest" class="form-input">
+            <option value="">— בחר טיפול —</option>
+            <% for (const t of treatments) { %><option value="<%= t %>" <%= lead && lead.treatment_interest===t ? 'selected' : '' %>><%= t %></option><% } %>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">מקור</label>
+          <select name="source" class="form-input">
+            <% for (const s of sources) { %><option value="<%= s %>" <%= lead && lead.source===s ? 'selected' : '' %>><%= s %></option><% } %>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">סטטוס</label>
+        <select name="status" class="form-input">
+          <% for (const s of statuses) { %><option value="<%= s %>" <%= lead && lead.status===s ? 'selected' : '' %>><%= s %></option><% } %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">תיאור / מה הלקוח אמר</label>
+        <textarea name="description" class="form-input" rows="3" placeholder="מה הלקוח מחפש..."><%= lead ? lead.description||'' : '' %></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">הערות פנימיות</label>
+        <textarea name="notes" class="form-input" rows="2" placeholder="הערות לצוות..."><%= lead ? lead.notes||'' : '' %></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px">
+      <a href="/leads" class="btn btn-outline">ביטול</a>
+      <button type="submit" class="btn btn-primary btn-large">💾 <%= lead ? 'שמור שינויים' : 'הוסף ליד' %></button>
+    </div>
+  </form>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));</script>
+</body></html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%= patient ? 'עריכת מטופל' : 'מטופל חדש' %> | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <div>
+    <a href="/patients" class="back-link">← חזרה למטופלים</a>
+    <h1 class="page-title"><%= patient ? '✏️ עריכת מטופל' : '➕ מטופל חדש' %></h1>
+  </div>
+</div>
+
+<div style="max-width:680px">
+  <form method="POST">
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">פרטים אישיים</div>
+      <div class="builder-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">שם מלא *</label>
+          <input type="text" name="name" class="form-input" required value="<%= patient ? patient.name : '' %>" placeholder="שם ושם משפחה">
+        </div>
+        <div class="form-group" style="width:130px">
+          <label class="form-label">שנת לידה</label>
+          <input type="number" name="birth_year" class="form-input" min="1920" max="2010" value="<%= patient && patient.birth_year ? patient.birth_year : '' %>" placeholder="1980">
+        </div>
+      </div>
+      <div class="builder-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">טלפון</label>
+          <input type="tel" name="phone" class="form-input" value="<%= patient ? patient.phone||'' : '' %>" placeholder="05X-XXXXXXX">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">מייל</label>
+          <input type="email" name="email" class="form-input" value="<%= patient ? patient.email||'' : '' %>" placeholder="name@email.com">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">פרטי עור ובריאות</div>
+      <div class="builder-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">סוג עור (Fitzpatrick)</label>
+          <select name="skin_type" class="form-input">
+            <option value="">— לא ידוע —</option>
+            <% for (const t of ['Type I','Type II','Type III','Type IV','Type V','Type VI']) { %>
+            <option value="<%= t %>" <%= patient && patient.skin_type===t ? 'selected':'' %>><%= t %></option>
+            <% } %>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">קופת חולים</label>
+          <select name="health_insurance" class="form-input">
+            <option value="">— ללא / לא ידוע —</option>
+            <% for (const ins of ['כללית','מכבי','מאוחדת','לאומית']) { %>
+            <option value="<%= ins %>" <%= patient && patient.health_insurance===ins ? 'selected':'' %>><%= ins %></option>
+            <% } %>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">הערות</label>
+        <textarea name="notes" class="form-input" rows="3" placeholder="היסטוריה רפואית, אלרגיות, הערות..."><%= patient ? patient.notes||'' : '' %></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px">
+      <a href="/patients" class="btn btn-outline">ביטול</a>
+      <button type="submit" class="btn btn-primary btn-large">💾 <%= patient ? 'שמור שינויים' : 'הוסף מטופל' %></button>
+    </div>
+  </form>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));</script>
+</body></html>

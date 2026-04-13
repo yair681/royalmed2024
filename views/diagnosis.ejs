@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>פענוח ואבחון | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <h1 class="page-title">🔬 פענוח ואבחון</h1>
+  <p class="page-subtitle">העלה תמונת עור או הזן נתונים ידנית — AI יספק פענוח קליני בעברית</p>
+</div>
+
+<div style="display:flex;gap:8px;margin-bottom:20px">
+  <button onclick="switchTab('image')" id="tabImage" class="btn btn-primary">📷 ניתוח תמונה</button>
+  <button onclick="switchTab('manual')" id="tabManual" class="btn btn-outline">✏️ הזנה ידנית</button>
+</div>
+
+<div id="panelImage">
+<div class="two-col-layout">
+  <div class="card">
+    <div class="card-title">העלאת תמונה לניתוח</div>
+    <form id="diagnosisForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="form-label">מטופל</label>
+        <div class="patient-select-row">
+          <select name="patient_id" id="patientSelect" class="form-input form-select">
+            <option value="">— ייעוץ אנונימי —</option>
+            <% for (const p of patients) { %><option value="<%= p.id %>"><%= p.name %><% if (p.phone) { %> | <%= p.phone %><% } %></option><% } %>
+          </select>
+          <input type="text" name="patient_name" id="patientName" class="form-input" placeholder="או הכנס שם ידנית...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">תמונת הבדיקה *</label>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" name="image" id="imageInput" accept="image/*" class="upload-input" required>
+          <div class="upload-content" id="uploadContent"><div class="upload-icon">📷</div><div class="upload-text">לחץ להעלאה או גרור תמונה לכאן</div><div class="upload-hint">PNG, JPG, WEBP עד 10MB</div></div>
+          <img id="imagePreview" class="image-preview" style="display:none">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">הערות צוות (אופציונלי)</label>
+        <textarea name="additional_info" class="form-input form-textarea" placeholder="תלונות מטופל, מידע רלוונטי..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full btn-large" id="submitBtn">
+        <span id="submitText">ניתוח תמונה →</span>
+        <span id="submitLoader" style="display:none">⏳ מנתח...</span>
+      </button>
+    </form>
+  </div>
+  <div class="card" id="resultCard" style="display:none">
+    <div class="card-title">📋 תוצאות הניתוח <span class="model-badge" id="modelBadge"></span></div>
+    <div id="resultContent" class="result-content"></div>
+    <div class="result-actions" style="flex-wrap:wrap;gap:8px">
+      <button onclick="printResult()" class="btn btn-outline">🖨 הדפסה</button>
+      <button onclick="copyResult()" class="btn btn-outline">📋 העתקה</button>
+      <button onclick="downloadPDF()" class="btn btn-outline" id="pdfBtn" style="display:none">📄 הורד PDF</button>
+      <button onclick="newDiagnosis()" class="btn btn-secondary">ניתוח חדש</button>
+    </div>
+  </div>
+  <div class="card card-error" id="errorCard" style="display:none">
+    <div class="card-title">⚠ שגיאה</div><div id="errorContent"></div>
+    <button onclick="newDiagnosis()" class="btn btn-secondary">נסה שנית</button>
+  </div>
+</div>
+</div>
+
+<div id="panelManual" style="display:none">
+<div class="two-col-layout">
+  <div class="card">
+    <div class="card-title">הזנת ממצאים ידנית</div>
+    <form id="manualForm">
+      <div class="form-group">
+        <label class="form-label">מטופל</label>
+        <div class="patient-select-row">
+          <select name="patient_id" id="manualPatientSelect" class="form-input form-select">
+            <option value="">— ייעוץ אנונימי —</option>
+            <% for (const p of patients) { %><option value="<%= p.id %>"><%= p.name %></option><% } %>
+          </select>
+          <input type="text" name="patient_name" id="manualPatientName" class="form-input" placeholder="או הכנס שם...">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label class="form-label">סוג עור (Fitzpatrick)</label>
+          <select name="fitzpatrick" class="form-input form-select" id="f_fitz"><option value="">— לא ידוע —</option><option>Type I</option><option>Type II</option><option>Type III</option><option>Type IV</option><option>Type V</option><option>Type VI</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">חומרת קמטים (Glogau)</label>
+          <select name="glogau" class="form-input form-select" id="f_glogau"><option value="">— לא ידוע —</option><option>Grade I — קמטים קלים</option><option>Grade II — קמטים בתנועה</option><option>Grade III — קמטים במנוחה</option><option>Grade IV — קמטים קשים</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">ממצאים קליניים</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
+          <% ['פיגמנטציה','מלזמה','אקנה פעיל','צלקות אקנה','קמטי מצח','עורבות','Tear trough','קפלי נאזו-לביאל','נקבוביות מורחבות','עור יבש','עור שמן','אדמומיות'].forEach(f => { %>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="finding-check" value="<%= f %>"> <%= f %></label>
+          <% }) %>
+        </div>
+        <textarea id="findingsText" class="form-input form-textarea" rows="4" placeholder="תאר את הממצאים שנצפו..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full btn-large" id="manualSubmitBtn">
+        <span id="manualSubmitText">קבל המלצת טיפול →</span>
+        <span id="manualSubmitLoader" style="display:none">⏳ מנתח...</span>
+      </button>
+    </form>
+  </div>
+  <div class="card" id="manualResultCard" style="display:none">
+    <div class="card-title">📋 המלצת טיפול</div>
+    <div id="manualResultContent" class="result-content"></div>
+    <div class="result-actions"><button onclick="printResult()" class="btn btn-outline">🖨 הדפסה</button></div>
+  </div>
+  <div class="card card-error" id="manualErrorCard" style="display:none"><div class="card-title">⚠ שגיאה</div><div id="manualErrorContent"></div></div>
+</div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+let currentConsultationId = null;
+function switchTab(tab){document.getElementById('panelImage').style.display=tab==='image'?'block':'none';document.getElementById('panelManual').style.display=tab==='manual'?'block':'none';document.getElementById('tabImage').className=tab==='image'?'btn btn-primary':'btn btn-outline';document.getElementById('tabManual').className=tab==='manual'?'btn btn-primary':'btn btn-outline';}
+
+const imageInput=document.getElementById('imageInput'),imagePreview=document.getElementById('imagePreview'),uploadContent=document.getElementById('uploadContent');
+imageInput.addEventListener('change',function(){const file=this.files[0];if(file){const r=new FileReader();r.onload=e=>{imagePreview.src=e.target.result;imagePreview.style.display='block';uploadContent.style.display='none';};r.readAsDataURL(file);}});
+const uploadZone=document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('drag-over');});
+uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop',e=>{e.preventDefault();uploadZone.classList.remove('drag-over');const file=e.dataTransfer.files[0];if(file&&file.type.startsWith('image/')){imageInput.files=e.dataTransfer.files;imageInput.dispatchEvent(new Event('change'));}});
+document.getElementById('patientSelect').addEventListener('change',function(){if(this.value)document.getElementById('patientName').value=this.options[this.selectedIndex].text.split(' | ')[0];});
+
+document.getElementById('diagnosisForm').addEventListener('submit',async function(e){
+  e.preventDefault();setLoading(true);hideCards();
+  const fd=new FormData(this);
+  try{const res=await fetch('/api/diagnose',{method:'POST',body:fd});const data=await res.json();
+    if(data.success)showResult(data.result,data.model,data.consultation_id);else showError(data.error);
+  }catch(err){showError('שגיאת תקשורת: '+err.message);}finally{setLoading(false);}
+});
+function setLoading(on){document.getElementById('submitBtn').disabled=on;document.getElementById('submitText').style.display=on?'none':'inline';document.getElementById('submitLoader').style.display=on?'inline':'none';}
+function showResult(text,model,cid){currentConsultationId=cid;document.getElementById('resultCard').style.display='block';document.getElementById('modelBadge').textContent=model||'';document.getElementById('resultContent').innerHTML=text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');if(cid)document.getElementById('pdfBtn').style.display='inline-block';document.getElementById('resultCard').scrollIntoView({behavior:'smooth'});}
+function showError(msg){document.getElementById('errorCard').style.display='block';document.getElementById('errorContent').textContent=msg;}
+function hideCards(){document.getElementById('resultCard').style.display='none';document.getElementById('errorCard').style.display='none';}
+function printResult(){window.print();}
+function copyResult(){navigator.clipboard.writeText(document.getElementById('resultContent').innerText).then(()=>alert('הועתק ללוח'));}
+function newDiagnosis(){document.getElementById('diagnosisForm').reset();imagePreview.style.display='none';uploadContent.style.display='block';hideCards();currentConsultationId=null;window.scrollTo(0,0);}
+function downloadPDF(){if(currentConsultationId)window.open('/report/'+currentConsultationId,'_blank');}
+
+document.querySelectorAll('.finding-check').forEach(cb=>cb.addEventListener('change',updateFindingsText));
+function updateFindingsText(){const checked=[...document.querySelectorAll('.finding-check:checked')].map(c=>c.value);const manual=document.getElementById('findingsText');const existing=manual.value.replace(/^\[.*?\]\n/,'');if(checked.length)manual.value='[ממצאים: '+checked.join(', ')+']\n'+existing;else manual.value=existing;}
+document.getElementById('manualPatientSelect').addEventListener('change',function(){if(this.value)document.getElementById('manualPatientName').value=this.options[this.selectedIndex].text.split(' | ')[0];});
+document.getElementById('manualForm').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const fitz=document.getElementById('f_fitz').value,glogau=document.getElementById('f_glogau').value,text=document.getElementById('findingsText').value.trim();
+  let findings='';if(fitz)findings+=`סיווג Fitzpatrick: ${fitz}\n`;if(glogau)findings+=`חומרת קמטים: ${glogau}\n`;if(text)findings+=`\n${text}`;
+  if(!findings.trim())return alert('יש להזין לפחות ממצא אחד');
+  document.getElementById('manualSubmitBtn').disabled=true;document.getElementById('manualSubmitText').style.display='none';document.getElementById('manualSubmitLoader').style.display='inline';
+  document.getElementById('manualResultCard').style.display='none';document.getElementById('manualErrorCard').style.display='none';
+  try{const res=await fetch('/api/diagnose-manual',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patient_name:document.getElementById('manualPatientName').value,patient_id:document.getElementById('manualPatientSelect').value||null,findings})});
+    const data=await res.json();
+    if(data.success){document.getElementById('manualResultCard').style.display='block';document.getElementById('manualResultContent').innerHTML=data.result.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');document.getElementById('manualResultCard').scrollIntoView({behavior:'smooth'});}
+    else{document.getElementById('manualErrorCard').style.display='block';document.getElementById('manualErrorContent').textContent=data.error;}
+  }catch(err){document.getElementById('manualErrorCard').style.display='block';document.getElementById('manualErrorContent').textContent=err.message;}
+  finally{document.getElementById('manualSubmitBtn').disabled=false;document.getElementById('manualSubmitText').style.display='inline';document.getElementById('manualSubmitLoader').style.display='none';}
+});
+</script>
+</body></html>

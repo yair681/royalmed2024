@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%= agent.name %> | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:14px">
+    <a href="/agents" class="back-link" style="margin:0">←</a>
+    <div class="agent-header-icon"><% if (agent.icon && agent.icon.startsWith('/')) { %><img src="<%= agent.icon %>" style="width:40px;height:40px;object-fit:cover;border-radius:10px"><% } else { %><%= agent.icon || '🤖' %><% } %></div>
+    <div><h1 class="page-title" style="margin:0"><%= agent.name %></h1><p class="page-subtitle" style="margin:0"><%= agent.description || '' %> · <%= agent.model %></p></div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <select id="patientSelect" class="form-input form-select-sm" style="width:200px">
+      <option value="">— בלי מטופל ספציפי —</option>
+      <% for (const p of patients) { %><option value="<%= p.id %>" data-name="<%= p.name %>"><%= p.name %></option><% } %>
+    </select>
+    <a href="/agents/<%= agent.id %>/edit" class="btn btn-outline btn-sm">✏️ ערוך Agent</a>
+    <button onclick="clearConversation()" class="btn btn-outline btn-sm">🔄 שיחה חדשה</button>
+  </div>
+</div>
+
+<div class="chat-layout">
+  <div class="chat-container card">
+    <div class="agent-chat-banner">
+      <div class="agent-banner-icon"><% if (agent.icon && agent.icon.startsWith('/')) { %><img src="<%= agent.icon %>" style="width:44px;height:44px;object-fit:cover;border-radius:10px"><% } else { %><%= agent.icon || '🤖' %><% } %></div>
+      <div class="agent-banner-info"><div class="agent-banner-name"><%= agent.name %></div><div class="agent-banner-desc"><%= agent.description || 'עוזר AI מותאם אישית' %></div></div>
+      <div class="agent-banner-model"><%= agent.model %></div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-welcome">
+        <div class="welcome-icon"><% if (agent.icon && agent.icon.startsWith('/')) { %><img src="<%= agent.icon %>" style="width:60px;height:60px;object-fit:cover;border-radius:14px"><% } else { %><%= agent.icon || '🤖' %><% } %></div>
+        <div class="welcome-title">שלום! אני <%= agent.name %></div>
+        <div class="welcome-text"><%= agent.description || 'איך אוכל לעזור?' %></div>
+        <% if (agent.knowledge) { %><div class="welcome-text" style="font-size:12px;color:#94a3b8;margin-top:8px">📚 יש לי בסיס ידע מותאם אישית</div><% } %>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <textarea id="chatInput" class="chat-input" placeholder="שאל את <%= agent.name %>..." rows="2"></textarea>
+      <button id="sendBtn" onclick="sendMessage()" class="btn btn-primary chat-send-btn">שלח</button>
+    </div>
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+const agentId = <%= agent.id %>;
+const agentName = "<%= agent.name.replace(/"/g,'\\"') %>";
+const agentIcon = "<%= (agent.icon||'🤖').replace(/"/g,'\\"') %>";
+let sessionId = 'agent-<%= agent.id %>-' + Date.now();
+let isLoading = false;
+
+document.getElementById('chatInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg || isLoading) return;
+  document.querySelector('.chat-welcome')?.remove();
+  addMessage('user', msg);
+  input.value = '';
+  isLoading = true;
+  const patientSelect = document.getElementById('patientSelect');
+  const patientName = patientSelect.options[patientSelect.selectedIndex]?.dataset?.name || '';
+  const typing = addTyping();
+  try {
+    const res = await fetch(`/api/agents/${agentId}/chat`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg, session_id: sessionId, patient_name: patientName })
+    });
+    const data = await res.json();
+    typing.remove();
+    if (data.success) addMessage('assistant', data.response);
+    else addMessage('error', '⚠ ' + data.error);
+  } catch(e) { typing.remove(); addMessage('error', '⚠ שגיאת תקשורת'); }
+  finally { isLoading = false; }
+}
+
+function addMessage(role, text) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `chat-msg chat-msg-${role}`;
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+  bubble.innerHTML = text.replace(/\n/g,'<br>');
+  div.appendChild(bubble);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+function addTyping() {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg chat-msg-assistant';
+  div.innerHTML = '<div class="chat-bubble typing-indicator"><span></span><span></span><span></span></div>';
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight; return div;
+}
+function clearConversation() {
+  sessionId = 'agent-<%= agent.id %>-' + Date.now();
+  document.getElementById('chatMessages').innerHTML = `<div class="chat-welcome"><div class="welcome-icon">${agentIcon}</div><div class="welcome-title">שיחה חדשה עם ${agentName}</div></div>`;
+}
+</script>
+</body></html>

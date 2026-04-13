@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>עוזר AI | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <h1 class="page-title">💬 עוזר AI רפואי</h1>
+  <p class="page-subtitle">שאל שאלות מקצועיות, קבל מידע על טיפולים ופרוטוקולים</p>
+</div>
+<div class="chat-layout">
+  <div class="chat-container card">
+    <div class="chat-header">
+      <div class="chat-model-selector">
+        <label>מודל:</label>
+        <select id="chatModel" class="form-input form-select-sm">
+          <option value="openai" selected>GPT-4o (OpenAI)</option>
+        </select>
+      </div>
+      <button onclick="clearChat()" class="btn btn-outline btn-sm">נקה שיחה</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-welcome">
+        <div class="welcome-icon">🏥</div>
+        <div class="welcome-title">שלום! אני העוזר AI של רויאל-מד</div>
+        <div class="welcome-text">אני כאן לסייע לצוות הרפואי עם:</div>
+        <div class="welcome-chips">
+          <span class="chip" onclick="sendQuick('מה ההתוויות לבוטוקס?')">התוויות בוטוקס</span>
+          <span class="chip" onclick="sendQuick('מה ההבדל בין פילר לבוטוקס?')">פילר vs בוטוקס</span>
+          <span class="chip" onclick="sendQuick('פרוטוקול טיפול PRP')">פרוטוקול PRP</span>
+          <span class="chip" onclick="sendQuick('כיצד לטפל בצלקות אקנה?')">טיפול צלקות</span>
+          <span class="chip" onclick="sendQuick('התוויות נגד להיפורון')">התוויות נגד</span>
+          <span class="chip" onclick="sendQuick('המלץ תוכנית טיפול לעור מזדקן')">תוכנית טיפול</span>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <textarea id="chatInput" class="chat-input" placeholder="שאל שאלה רפואית..." rows="2"></textarea>
+      <button id="sendBtn" onclick="sendMessage()" class="btn btn-primary chat-send-btn">שלח</button>
+    </div>
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+const messagesDiv = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+let isLoading = false;
+
+chatInput.addEventListener('keydown', function(e) { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} });
+function sendQuick(text) { chatInput.value=text; sendMessage(); }
+
+async function sendMessage() {
+  const message = chatInput.value.trim(); if (!message||isLoading) return;
+  const welcome = document.querySelector('.chat-welcome'); if (welcome) welcome.remove();
+  addMessage('user', message); chatInput.value=''; isLoading=true;
+  const typingEl = addTypingIndicator();
+  try {
+    const res = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message, model: document.getElementById('chatModel').value})});
+    const data = await res.json(); typingEl.remove();
+    if (data.success) addMessage('assistant', data.response);
+    else addMessage('error', '⚠ שגיאה: '+data.error);
+  } catch(err) { typingEl.remove(); addMessage('error','⚠ שגיאת תקשורת'); }
+  finally { isLoading=false; }
+}
+
+function addMessage(role, text) {
+  const div=document.createElement('div'); div.className=`chat-msg chat-msg-${role}`;
+  const bubble=document.createElement('div'); bubble.className='chat-bubble'; bubble.innerHTML=text.replace(/\n/g,'<br>');
+  div.appendChild(bubble); messagesDiv.appendChild(div); messagesDiv.scrollTop=messagesDiv.scrollHeight; return div;
+}
+function addTypingIndicator() {
+  const div=document.createElement('div'); div.className='chat-msg chat-msg-assistant';
+  div.innerHTML='<div class="chat-bubble typing-indicator"><span></span><span></span><span></span></div>';
+  messagesDiv.appendChild(div); messagesDiv.scrollTop=messagesDiv.scrollHeight; return div;
+}
+function clearChat() { messagesDiv.innerHTML='<div class="chat-welcome"><div class="welcome-icon">🏥</div><div class="welcome-title">שיחה חדשה</div></div>'; }
+</script>
+</body></html>

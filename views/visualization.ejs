@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>הדמיית לפני/אחרי | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <h1 class="page-title">✨ הדמיית לפני/אחרי</h1>
+  <p class="page-subtitle">העלה תמונת פנים של מטופל, בחר טיפול — AI יצור הדמיה ריאליסטית של התוצאה</p>
+</div>
+<div style="background:#fff8e1;border:1px solid #f0c040;border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:#7a5e00">
+  ⚠️ <strong>הדמיה בלבד — אינה מהווה התחייבות לתוצאה.</strong> התמונה נוצרת לצרכי הדגמה ויזואלית ואינה תחליף לייעוץ רפואי.
+</div>
+<div class="two-col-layout">
+  <div class="card">
+    <div class="card-title">הגדרת הדמיה</div>
+    <form id="vizForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="form-label">מטופל</label>
+        <div class="patient-select-row">
+          <select name="patient_id" id="patientSelect" class="form-input form-select">
+            <option value="">— ייעוץ אנונימי —</option>
+            <% for (const p of patients) { %><option value="<%= p.id %>"><%= p.name %><% if (p.phone) { %> | <%= p.phone %><% } %></option><% } %>
+          </select>
+          <input type="text" name="patient_name" id="patientName" class="form-input" placeholder="או הכנס שם...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">תמונת פנים של המטופל *</label>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" name="image" id="imageInput" accept="image/*" class="upload-input" required>
+          <div class="upload-content" id="uploadContent"><div class="upload-icon">🤳</div><div class="upload-text">העלה תמונת פנים ברורה</div><div class="upload-hint">תמונה חזיתית, תאורה טובה — לתוצאה מיטבית</div></div>
+          <img id="imagePreview" class="image-preview" style="display:none">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">טיפול לדמיית *</label>
+        <select name="treatment_id" id="treatmentSelect" class="form-input form-select" required>
+          <option value="">— בחר טיפול —</option>
+          <% let lastCat = ''; for (const t of treatments) { if (t.category_name !== lastCat) { if (lastCat) { %></optgroup><% } lastCat = t.category_name; %><optgroup label="<%= t.category_name %>"><% } %><option value="<%= t.id %>"><%= t.name %></option><% } if (lastCat) { %></optgroup><% } %>
+        </select>
+        <div id="treatmentInfo" class="treatment-info" style="display:none">
+          <div class="treatment-info-name" id="treatmentName"></div>
+          <div class="treatment-info-desc" id="treatmentDesc"></div>
+          <div class="treatment-info-tags" id="treatmentTags"></div>
+        </div>
+      </div>
+      <div class="info-box"><span>ℹ</span> הדמיה זו היא כלי ויזואלי לייעוץ בלבד ואינה מהווה הבטחה לתוצאה.</div>
+      <button type="submit" class="btn btn-primary btn-full btn-large" id="submitBtn">
+        <span id="submitText">✨ צור הדמיה</span>
+        <span id="submitLoader" style="display:none">⏳ מייצר הדמיה (30-60 שניות)...</span>
+      </button>
+    </form>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none">
+    <div class="card-title">הדמיית לפני/אחרי</div>
+    <div class="ba-treatment-badge" id="baTreatment"></div>
+    <div class="before-after-container">
+      <div class="ba-side"><div class="ba-label before-label">לפני</div><img id="beforeImg" class="ba-image" src="" alt="לפני"></div>
+      <div class="ba-divider">⟷</div>
+      <div class="ba-side"><div class="ba-label after-label">אחרי</div><img id="afterImg" class="ba-image" src="" alt="אחרי"></div>
+    </div>
+    <div class="result-note">* הדמיה זו נוצרה על ידי AI לצורך ייעוץ בלבד</div>
+    <div class="result-actions">
+      <a id="downloadBtn" href="#" download class="btn btn-primary">⬇ שמור הדמיה</a>
+      <button onclick="newVisualization()" class="btn btn-secondary">הדמיה חדשה</button>
+    </div>
+  </div>
+
+  <div class="card card-error" id="errorCard" style="display:none">
+    <div class="card-title">⚠ שגיאה</div><div id="errorContent"></div>
+    <button onclick="newVisualization()" class="btn btn-secondary">נסה שנית</button>
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+const treatmentsData = <%- JSON.stringify(treatments) %>;
+const treatmentSelect = document.getElementById('treatmentSelect');
+const treatmentInfo = document.getElementById('treatmentInfo');
+const imageInput = document.getElementById('imageInput');
+const imagePreview = document.getElementById('imagePreview');
+const uploadContent = document.getElementById('uploadContent');
+
+treatmentSelect.addEventListener('change', function() {
+  const treatment = treatmentsData.find(t => t.id === this.value);
+  if (treatment) {
+    document.getElementById('treatmentName').textContent = treatment.name;
+    document.getElementById('treatmentDesc').textContent = treatment.description || '';
+    const tags = (treatment.indications||[]).map(i=>`<span class="tag">${i}</span>`).join('');
+    document.getElementById('treatmentTags').innerHTML = tags;
+    treatmentInfo.style.display = 'block';
+  } else { treatmentInfo.style.display = 'none'; }
+});
+
+imageInput.addEventListener('change', function() {
+  const file = this.files[0]; if (!file) return;
+  const r = new FileReader(); r.onload = e => { imagePreview.src = e.target.result; imagePreview.style.display='block'; uploadContent.style.display='none'; }; r.readAsDataURL(file);
+});
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e=>{e.preventDefault();uploadZone.classList.add('drag-over');});
+uploadZone.addEventListener('dragleave', ()=>uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e=>{e.preventDefault();uploadZone.classList.remove('drag-over');const file=e.dataTransfer.files[0];if(file&&file.type.startsWith('image/')){imageInput.files=e.dataTransfer.files;imageInput.dispatchEvent(new Event('change'));}});
+document.getElementById('patientSelect').addEventListener('change', function(){if(this.value)document.getElementById('patientName').value=this.options[this.selectedIndex].text.split(' | ')[0];});
+
+document.getElementById('vizForm').addEventListener('submit', async function(e) {
+  e.preventDefault(); setLoading(true); hideCards();
+  try {
+    const res = await fetch('/api/visualize', {method:'POST', body: new FormData(this)});
+    const data = await res.json();
+    if (data.success) showResult(data.before_url, data.after_url, data.treatment);
+    else showError(data.error);
+  } catch(err) { showError('שגיאת תקשורת: '+err.message); }
+  finally { setLoading(false); }
+});
+
+function setLoading(on) { const btn=document.getElementById('submitBtn'); btn.disabled=on; document.getElementById('submitText').style.display=on?'none':'inline'; document.getElementById('submitLoader').style.display=on?'inline':'none'; }
+function showResult(beforeUrl, afterUrl, treatment) { document.getElementById('resultCard').style.display='block'; document.getElementById('baTreatment').textContent='✨ '+(treatment&&treatment.name||''); document.getElementById('beforeImg').src=beforeUrl; document.getElementById('afterImg').src=afterUrl; document.getElementById('downloadBtn').href=afterUrl; document.getElementById('resultCard').scrollIntoView({behavior:'smooth'}); }
+function showError(msg) { document.getElementById('errorCard').style.display='block'; document.getElementById('errorContent').textContent=msg; }
+function hideCards() { document.getElementById('resultCard').style.display='none'; document.getElementById('errorCard').style.display='none'; }
+function newVisualization() { document.getElementById('vizForm').reset(); imagePreview.style.display='none'; uploadContent.style.display='block'; treatmentInfo.style.display='none'; hideCards(); window.scrollTo(0,0); }
+</script>
+</body></html>

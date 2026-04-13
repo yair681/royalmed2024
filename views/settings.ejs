@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>הגדרות | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header"><h1 class="page-title">⚙ הגדרות המערכת</h1><p class="page-subtitle">ניהול API, סיסמה ורשימת טיפולים</p></div>
+<div class="settings-layout">
+  <div class="card">
+    <div class="card-title">🔑 הגדרות API</div>
+    <form id="apiForm">
+      <div class="form-group">
+        <label class="form-label">OpenAI API Key <span class="key-status <%- openai_set?'key-ok':'key-missing' %>"><%- openai_set?'✓ מוגדר':'⚠ לא מוגדר' %></span></label>
+        <input type="password" name="openai_key" class="form-input" placeholder="sk-proj-..." autocomplete="off">
+        <div class="field-hint">מקבל מ-platform.openai.com</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">שינוי סיסמת כניסה</label>
+        <input type="password" name="new_password" class="form-input" placeholder="השאר ריק לא לשנות" autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn btn-primary" id="saveApiBtn">שמור הגדרות</button>
+      <div id="apiSaveMsg" style="display:none" class="success-msg">✓ ההגדרות נשמרו!</div>
+    </form>
+  </div>
+  <div class="card">
+    <div class="card-title">💉 ניהול רשימת טיפולים</div>
+    <p class="card-desc">ניתן להוסיף, לערוך ולהסתיר טיפולים. שינויים ישפיעו מיד על ה-AI.</p>
+    <div id="treatmentsEditor"><div class="loading-treatments">טוען רשימת טיפולים...</div></div>
+    <div class="treatments-actions">
+      <button onclick="addNewTreatment()" class="btn btn-secondary">+ הוסף טיפול</button>
+      <button onclick="saveTreatments()" class="btn btn-primary">💾 שמור שינויים</button>
+      <div id="treatSaveMsg" style="display:none" class="success-msg">✓ נשמר!</div>
+    </div>
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+document.getElementById('apiForm').addEventListener('submit',async function(e){
+  e.preventDefault();const fd=new FormData(this);
+  const res=await fetch('/api/save-api-keys',{method:'POST',body:fd});
+  const data=await res.json();
+  if(data.success){const msg=document.getElementById('apiSaveMsg');msg.style.display='block';setTimeout(()=>msg.style.display='none',3000);}
+});
+
+let treatmentsData=null;
+async function loadTreatments(){const res=await fetch('/api/treatments');treatmentsData=await res.json();renderTreatments();}
+function renderTreatments(){
+  const container=document.getElementById('treatmentsEditor');let html='';
+  treatmentsData.categories.forEach((cat,catIdx)=>{
+    html+=`<div class="treat-category"><div class="treat-cat-header"><span class="treat-cat-name">${cat.name}</span></div><div class="treat-list">`;
+    cat.treatments.forEach((t,treatIdx)=>{
+      html+=`<div class="treat-item ${t.active?'':'treat-inactive'}"><div class="treat-item-header"><div class="treat-item-name">${t.name}</div><div class="treat-item-actions"><label class="toggle-label"><input type="checkbox" onchange="toggleTreatment(${catIdx},${treatIdx},this.checked)" ${t.active?'checked':''}><span class="toggle-text">${t.active?'פעיל':'כבוי'}</span></label><button onclick="editTreatment(${catIdx},${treatIdx})" class="btn btn-outline btn-xs">ערוך</button></div></div><div class="treat-item-desc">${t.description}</div></div>`;
+    });
+    html+='</div></div>';
+  });
+  container.innerHTML=html;
+}
+function toggleTreatment(catIdx,treatIdx,active){treatmentsData.categories[catIdx].treatments[treatIdx].active=active;renderTreatments();}
+function editTreatment(catIdx,treatIdx){const t=treatmentsData.categories[catIdx].treatments[treatIdx];const name=prompt('שם הטיפול:',t.name);if(name)treatmentsData.categories[catIdx].treatments[treatIdx].name=name;const desc=prompt('תיאור:',t.description);if(desc)treatmentsData.categories[catIdx].treatments[treatIdx].description=desc;renderTreatments();}
+async function saveTreatments(){const res=await fetch('/api/treatments/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(treatmentsData)});const data=await res.json();if(data.success){const msg=document.getElementById('treatSaveMsg');msg.style.display='inline';setTimeout(()=>msg.style.display='none',3000);}}
+function addNewTreatment(){const name=prompt('שם הטיפול:');if(!name)return;const catIdx=0;treatmentsData.categories[catIdx].treatments.push({id:Date.now().toString(),name,description:'',indications:[],active:true});renderTreatments();}
+loadTreatments();
+</script>
+</body></html>

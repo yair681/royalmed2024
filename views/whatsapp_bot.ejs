@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>בוט וואטסאפ | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header" style="margin-bottom:16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 class="page-title">💚 בוט וואטסאפ</h1>
+      <p class="page-subtitle">ניהול בוט AI אוטומטי לאיסוף לידים</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px">
+        <span style="font-size:13px;color:#64748b">בוט</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="botToggle" <%= settings && settings.enabled ? 'checked' : '' %> onchange="toggleBot(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span id="botStatusLabel" style="font-size:13px;font-weight:600;color:<%= settings && settings.enabled ? '#16a34a' : '#94a3b8' %>">
+          <%= settings && settings.enabled ? 'פעיל' : 'כבוי' %>
+        </span>
+      </div>
+      <button onclick="openSettings()" style="background:#006889;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-family:inherit">⚙️ הגדרות בוט</button>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:320px 1fr;gap:16px;height:calc(100vh - 200px);min-height:500px">
+  <div style="display:flex;flex-direction:column;gap:12px;overflow:hidden">
+    <div class="card" style="padding:16px;flex-shrink:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:600;color:#1e293b">חיבור וואטסאפ</span>
+        <div id="statusBadge" style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;background:#f1f5f9;color:#64748b">
+          <span id="statusDot" style="width:7px;height:7px;border-radius:50%;background:#94a3b8;display:inline-block"></span>
+          <span id="statusText">בודק...</span>
+        </div>
+      </div>
+      <div id="phoneRow" style="display:none;font-size:12px;color:#166534;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:7px 10px;margin-bottom:10px">📱 <span id="phoneNumber"></span></div>
+      <div id="qrWrapper" style="display:none;text-align:center;margin-bottom:10px">
+        <p style="font-size:11px;color:#64748b;margin-bottom:8px">פתח וואטסאפ ← הגדרות ← מכשירים מקושרים ← קשר מכשיר</p>
+        <img id="qrImage" src="" style="width:160px;height:160px;border:2px solid #e2e8f0;border-radius:8px;padding:6px">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="btnConnect" onclick="connectWA()" style="flex:1;padding:8px;background:#006889;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-family:inherit">🔗 התחבר</button>
+        <button id="btnDisconnect" onclick="disconnectWA()" style="display:none;flex:1;padding:8px;background:#fff;color:#dc2626;border:1px solid #fca5a5;border-radius:7px;cursor:pointer;font-size:12px;font-family:inherit">✕ התנתק</button>
+      </div>
+    </div>
+    <div class="card" style="flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0">
+      <div style="padding:12px 16px;border-bottom:1px solid #eef1f5;font-size:13px;font-weight:600;color:#1e293b;flex-shrink:0">שיחות <span id="convCount" style="font-size:11px;background:#e2e8f0;color:#64748b;border-radius:20px;padding:2px 8px;margin-right:4px">0</span></div>
+      <div id="convList" style="flex:1;overflow-y:auto"><div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px">אין שיחות עדיין</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
+    <div id="chatEmpty" style="flex:1;display:flex;align-items:center;justify-content:center;color:#94a3b8">
+      <div style="text-align:center"><div style="font-size:48px;margin-bottom:12px">💬</div><p style="font-size:13px">בחר שיחה מהרשימה</p></div>
+    </div>
+    <div id="chatView" style="display:none;flex-direction:column;height:100%">
+      <div id="chatHeader" style="padding:12px 16px;border-bottom:1px solid #eef1f5;display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <div style="width:36px;height:36px;border-radius:50%;background:#006889;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700" id="chatAvatar">?</div>
+        <div><div id="chatName" style="font-size:14px;font-weight:600;color:#1e293b"></div><div id="chatPhone" style="font-size:11px;color:#64748b"></div></div>
+        <div id="chatLeadBadge" style="display:none;margin-right:auto;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:20px;padding:3px 10px;font-size:11px">✓ ליד נוצר</div>
+      </div>
+      <div id="chatMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:#f8fafc"></div>
+    </div>
+  </div>
+</div>
+
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:28px;width:600px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 style="font-size:16px;font-weight:700;color:#1e293b">⚙️ הגדרות בוט וואטסאפ</h3>
+      <button onclick="closeSettings()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#64748b">✕</button>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:12px;color:#64748b;display:block;margin-bottom:6px">מודל AI</label>
+      <select id="settingsModel" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit">
+        <option value="gpt-4o-mini">gpt-4o-mini (מהיר וחסכוני)</option>
+        <option value="gpt-4o">gpt-4o (חזק יותר)</option>
+      </select>
+    </div>
+    <div style="margin-bottom:20px">
+      <label style="font-size:12px;color:#64748b;display:block;margin-bottom:6px">הוראות לבוט (System Prompt)</label>
+      <textarea id="settingsPrompt" rows="14" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeSettings()" style="padding:9px 20px;background:#f1f5f9;color:#64748b;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">ביטול</button>
+      <button onclick="saveSettings()" style="padding:9px 20px;background:#006889;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">💾 שמור</button>
+    </div>
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<style>
+.toggle-switch{position:relative;display:inline-block;width:40px;height:22px}.toggle-switch input{opacity:0;width:0;height:0}.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:22px;transition:.3s}.toggle-slider:before{content:'';position:absolute;width:16px;height:16px;right:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}.toggle-switch input:checked+.toggle-slider{background:#22c55e}.toggle-switch input:checked+.toggle-slider:before{transform:translateX(-18px)}
+.msg-bubble{max-width:72%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word}.msg-user{background:#dcf8c6;align-self:flex-start;border-bottom-right-radius:3px}.msg-bot{background:#fff;border:1px solid #e2e8f0;align-self:flex-end;border-bottom-left-radius:3px}
+.conv-item{padding:12px 16px;cursor:pointer;border-bottom:1px solid #f1f5f9;transition:background .15s}.conv-item:hover{background:#f8fafc}.conv-item.active{background:#e6f6fc}
+</style>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+let pollInterval=null,currentPhone=null,allConversations=[];
+
+async function checkStatus(){try{const res=await fetch('/api/whatsapp/status');const data=await res.json();updateConnectionUI(data.status,data.phone);}catch(e){updateConnectionUI('service_offline',null);}}
+function updateConnectionUI(status,phone){const dot=document.getElementById('statusDot'),text=document.getElementById('statusText'),badge=document.getElementById('statusBadge'),qrW=document.getElementById('qrWrapper'),phoneRow=document.getElementById('phoneRow'),btnConn=document.getElementById('btnConnect'),btnDisc=document.getElementById('btnDisconnect');qrW.style.display='none';phoneRow.style.display='none';btnConn.style.display='block';btnDisc.style.display='none';const states={connected:{color:'#22c55e',label:'מחובר',bg:'#f0fdf4',fg:'#166534'},qr_ready:{color:'#f59e0b',label:'סרוק QR',bg:'#fffbeb',fg:'#92400e'},connecting:{color:'#3b82f6',label:'מתחבר...',bg:'#eff6ff',fg:'#1e40af'},service_offline:{color:'#ef4444',label:'שירות כבוי',bg:'#fef2f2',fg:'#991b1b'},disconnected:{color:'#94a3b8',label:'מנותק',bg:'#f1f5f9',fg:'#64748b'}};const s=states[status]||states.disconnected;dot.style.background=s.color;text.textContent=s.label;badge.style.background=s.bg;badge.style.color=s.fg;if(status==='connected'){btnConn.style.display='none';btnDisc.style.display='block';if(phone){document.getElementById('phoneNumber').textContent='+'+phone;phoneRow.style.display='block';}}else if(status==='qr_ready'){qrW.style.display='block';fetchQR();}}
+async function fetchQR(){try{const res=await fetch('/api/whatsapp/qr');const data=await res.json();if(data.qr)document.getElementById('qrImage').src=data.qr;}catch(e){}}
+async function connectWA(){await fetch('/api/whatsapp/connect',{method:'POST'});startPolling();}
+async function disconnectWA(){if(!confirm('להתנתק מוואטסאפ?'))return;await fetch('/api/whatsapp/disconnect',{method:'POST'});updateConnectionUI('disconnected',null);}
+function startPolling(){checkStatus();if(pollInterval)clearInterval(pollInterval);pollInterval=setInterval(async()=>{checkStatus();await loadConversations();},4000);}
+async function toggleBot(enabled){const settings=await(await fetch('/api/whatsapp/bot-settings')).json();await fetch('/api/whatsapp/bot-settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...settings,enabled:enabled?1:0})});const label=document.getElementById('botStatusLabel');label.textContent=enabled?'פעיל':'כבוי';label.style.color=enabled?'#16a34a':'#94a3b8';}
+async function openSettings(){const data=await(await fetch('/api/whatsapp/bot-settings')).json();document.getElementById('settingsPrompt').value=data.system_prompt||'';document.getElementById('settingsModel').value=data.model||'gpt-4o-mini';document.getElementById('settingsModal').style.display='flex';}
+function closeSettings(){document.getElementById('settingsModal').style.display='none';}
+async function saveSettings(){const enabled=document.getElementById('botToggle').checked?1:0;const system_prompt=document.getElementById('settingsPrompt').value;const model=document.getElementById('settingsModel').value;await fetch('/api/whatsapp/bot-settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled,system_prompt,model})});closeSettings();alert('הגדרות נשמרו ✓');}
+async function loadConversations(){const res=await fetch('/api/whatsapp/conversations');allConversations=await res.json();renderConvList(allConversations);}
+function renderConvList(convs){const list=document.getElementById('convList');document.getElementById('convCount').textContent=convs.length;if(!convs.length){list.innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px">אין שיחות עדיין</div>';return;}list.innerHTML=convs.map(c=>{const name=c.display_name||c.phone;const initial=name.charAt(0).toUpperCase();const active=currentPhone===c.phone?' active':'';const leadBadge=c.lead_created?'<span style="font-size:10px;color:#16a34a;background:#f0fdf4;border-radius:10px;padding:1px 6px;margin-right:4px">ליד ✓</span>':'';const lastMsg=c.last_message?c.last_message.substring(0,45)+(c.last_message.length>45?'...':]:'';return`<div class="conv-item${active}" onclick="openConversation('${c.phone}')"><div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:50%;background:#006889;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0">${initial}</div><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;font-weight:600;color:#1e293b">${name}</span>${leadBadge}</div><div style="font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lastMsg}</div></div></div></div>`}).join('');}
+async function openConversation(phone){currentPhone=phone;document.querySelectorAll('.conv-item').forEach(el=>el.classList.remove('active'));event?.target?.closest('.conv-item')?.classList.add('active');const res=await fetch(`/api/whatsapp/conversations/${phone}`);const conv=await res.json();const name=conv.display_name||phone;document.getElementById('chatAvatar').textContent=name.charAt(0).toUpperCase();document.getElementById('chatName').textContent=name;document.getElementById('chatPhone').textContent='+'+phone;document.getElementById('chatLeadBadge').style.display=conv.lead_created?'block':'none';const msgs=conv.messages||[];const container=document.getElementById('chatMessages');container.innerHTML=msgs.map(m=>{const isUser=m.role==='user';return`<div style="display:flex;flex-direction:column;align-items:${isUser?'flex-start':'flex-end'}"><div class="msg-bubble ${isUser?'msg-user':'msg-bot'}">${escapeHtml(m.content||'')}</div></div>`;}).join('');document.getElementById('chatEmpty').style.display='none';document.getElementById('chatView').style.display='flex';container.scrollTop=container.scrollHeight;}
+function escapeHtml(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+document.getElementById('settingsModal').addEventListener('click',function(e){if(e.target===this)closeSettings();});
+(async()=>{await loadConversations();try{const res=await fetch('/api/whatsapp/status');const data=await res.json();updateConnectionUI(data.status,data.phone);if(data.status==='disconnected'){await fetch('/api/whatsapp/connect',{method:'POST'});}}catch(e){}startPolling();})();
+</script>
+</body></html>

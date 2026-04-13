@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agents | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <div><h1 class="page-title">🤖 ה-Agents שלי</h1><p class="page-subtitle">צור ונהל עוזרי AI מותאמים אישית למרפאה</p></div>
+  <a href="/agents/new" class="btn btn-primary btn-large">+ צור Agent חדש</a>
+</div>
+
+<% if (agents && agents.length) { %>
+<div class="agents-grid">
+<% for (const agent of agents) { %>
+<div class="agent-card <%- agent.active?'':'agent-inactive' %>">
+  <div class="agent-card-header">
+    <div class="agent-icon-big">
+      <% if (agent.icon && agent.icon.startsWith('/')) { %><img src="<%= agent.icon %>" style="width:56px;height:56px;object-fit:cover;border-radius:12px"><% } else { %><%= agent.icon || '🤖' %><% } %>
+    </div>
+    <div class="agent-status-dot <%- agent.active?'dot-active':'dot-inactive' %>"></div>
+  </div>
+  <div class="agent-name"><%= agent.name %></div>
+  <div class="agent-desc"><%= agent.description || 'אין תיאור' %></div>
+  <div class="agent-model-tag"><%= agent.model %></div>
+  <div class="agent-knowledge-preview"><% if (agent.knowledge) { %><span class="knowledge-badge">📚 יש בסיס ידע</span><% } %></div>
+  <div class="agent-card-actions">
+    <a href="/agents/<%= agent.id %>/chat" class="btn btn-primary btn-sm">💬 שוחח</a>
+    <a href="/agents/<%= agent.id %>/edit" class="btn btn-outline btn-sm">✏️ ערוך</a>
+    <button onclick="deleteAgent(<%= agent.id %>, '<%= agent.name.replace(/'/g,"\\'") %>')" class="btn btn-danger btn-sm">🗑</button>
+  </div>
+  <div class="agent-created">נוצר: <%= agent.created_at.slice(0,10) %></div>
+</div>
+<% } %>
+</div>
+<% } else { %>
+<div class="empty-state"><div class="empty-icon">🤖</div><div class="empty-title">אין Agents עדיין</div><div class="empty-desc">צור את ה-Agent הראשון שלך</div><a href="/agents/new" class="btn btn-primary" style="margin-top:20px">+ צור Agent ראשון</a></div>
+<% } %>
+
+<div class="tips-section">
+  <div class="section-title">💡 רעיונות ל-Agents</div>
+  <div class="tips-grid">
+    <div class="tip-card" onclick="useTemplate('יועץ טיפולי','💆','מומחה לייעוץ טיפולי אסתטי','אתה יועץ טיפולי מומחה של רויאל-מד.')"><div class="tip-icon">💆</div><div class="tip-name">יועץ טיפולי</div><div class="tip-desc">מתאים תוכנית טיפול אישית</div></div>
+    <div class="tip-card" onclick="useTemplate('מומחה עור','🔬','דרמטולוגיה אסתטית','אתה מומחה בדרמטולוגיה אסתטית.')"><div class="tip-icon">🔬</div><div class="tip-name">מומחה עור</div><div class="tip-desc">אבחון ופרוטוקולי טיפולי עור</div></div>
+    <div class="tip-card" onclick="useTemplate('מתאם מטופלים','📋','ניהול ותיאום מטופלים','אתה מתאם מטופלים של רויאל-מד.')"><div class="tip-icon">📋</div><div class="tip-name">מתאם מטופלים</div><div class="tip-desc">מעקב, תיאום וניהול מטופלים</div></div>
+    <div class="tip-card" onclick="useTemplate('מומחה אנטי-אייג\'ינג','🧬','מומחה לטיפולי נגד הזדקנות','אתה מומחה ברפואה אנטי-אייג\'ינג.')"><div class="tip-icon">🧬</div><div class="tip-name">מומחה אנטי-אייג'ינג</div><div class="tip-desc">פרוטוקולי חידוש ומניעת הזדקנות</div></div>
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+function deleteAgent(id,name){if(!confirm(`למחוק את "${name}"?`))return;fetch(`/api/agents/${id}/delete`,{method:'POST'}).then(r=>r.json()).then(d=>{if(d.success)location.reload();});}
+function useTemplate(name,icon,desc,prompt){window.location.href=`/agents/new?name=${encodeURIComponent(name)}&icon=${encodeURIComponent(icon)}&desc=${encodeURIComponent(desc)}&prompt=${encodeURIComponent(prompt)}`;}
+</script>
+</body></html>

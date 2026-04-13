@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>דוח ייעוץ — רויאל-מד</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f8fafc;color:#1e293b;direction:rtl}
+.print-bar{background:#1a3a5c;color:#fff;padding:12px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.print-bar h3{font-size:16px}
+.print-bar .btns{display:flex;gap:10px}
+.btn{padding:8px 20px;border-radius:6px;border:none;cursor:pointer;font-size:14px;font-weight:600}
+.btn-white{background:#fff;color:#1a3a5c}
+.btn-outline{background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.5)}
+.report-page{max-width:780px;margin:32px auto;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:48px 56px}
+.logo-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.logo-title{font-size:26px;font-weight:800;color:#1a3a5c}
+.logo-sub{font-size:13px;color:#64748b}
+.logo-date{font-size:12px;color:#94a3b8;text-align:left}
+hr.thick{border:none;border-top:2px solid #1a3a5c;margin:14px 0 24px}
+hr.thin{border:none;border-top:1px solid #e2e8f0;margin:24px 0}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin-bottom:24px}
+.meta-item{font-size:14px;color:#475569}
+.meta-item strong{color:#1e293b}
+.section-title{font-size:16px;font-weight:700;color:#1a3a5c;margin-bottom:14px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
+.ai-result{font-size:14px;line-height:1.9;color:#334155;white-space:pre-wrap}
+.ai-result strong{color:#1a3a5c}
+.disclaimer{margin-top:32px;padding:12px 16px;background:#f8fafc;border-radius:8px;font-size:12px;color:#94a3b8;border:1px solid #e2e8f0}
+@media print{.print-bar{display:none!important}body{background:#fff}.report-page{box-shadow:none;margin:0;border-radius:0;padding:24px 32px}@page{margin:1.5cm}}
+</style>
+</head>
+<body>
+<div class="print-bar">
+  <h3>דוח ייעוץ אסתטי — רויאל-מד</h3>
+  <div class="btns">
+    <button class="btn btn-outline" onclick="window.close()">✕ סגור</button>
+    <button class="btn btn-white" onclick="window.print()">🖨️ הדפס / שמור PDF</button>
+  </div>
+</div>
+
+<div class="report-page">
+  <div class="logo-row">
+    <div>
+      <img src="/static/images/logo.jpg" alt="Royale-Med" style="height:60px;object-fit:contain;border-radius:4px">
+    </div>
+    <div class="logo-date">
+      <%= c.created_at ? c.created_at.slice(0,16) : '' %><br>
+      <span style="color:#a78bfa">מודל AI: <%= c.model_used || '—' %></span>
+    </div>
+  </div>
+
+  <hr class="thick">
+
+  <div class="meta-grid">
+    <div class="meta-item"><strong>מטופל:</strong> <%= c.patient_name || 'לא צוין' %></div>
+    <div class="meta-item"><strong>תאריך:</strong> <%= c.created_at ? c.created_at.slice(0,10) : '—' %></div>
+    <% if (c.additional_info) { %>
+    <div class="meta-item" style="grid-column:1/-1"><strong>הערות צוות:</strong> <%= c.additional_info %></div>
+    <% } %>
+  </div>
+
+  <hr class="thin">
+
+  <div class="section-title">📋 תוצאת ניתוח AI</div>
+  <div class="ai-result"><%= c.ai_result ? c.ai_result.replace(/\*\*/g,'') : '—' %></div>
+
+  <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e2e8f0">
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:12px;text-align:center">בהתאם לנהלי משרד הבריאות וקופות החולים</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap">
+      <img src="/static/images/moh.png" alt="משרד הבריאות" style="height:36px;object-fit:contain;filter:grayscale(30%)">
+      <img src="/static/images/clalit.svg" alt="כללית" style="height:28px;object-fit:contain">
+      <img src="/static/images/maccabi.svg" alt="מכבי" style="height:28px;object-fit:contain">
+      <img src="/static/images/meuhedet.png" alt="מאוחדת" style="height:28px;object-fit:contain">
+      <img src="/static/images/leumit.png" alt="לאומית" style="height:28px;object-fit:contain">
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    ⚠️ מסמך זה הופק אוטומטית על ידי מערכת רויאל-מד AI לשימוש הצוות הרפואי בלבד.
+    המלצות אלו אינן מהוות אבחנה רפואית סופית ואינן תחליף לבדיקה קלינית.
+  </div>
+</div>
+</body>
+</html>

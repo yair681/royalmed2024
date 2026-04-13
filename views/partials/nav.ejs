@@ -1,0 +1,32 @@
+<div class="sidebar">
+  <div class="sidebar-logo" style="padding:16px 12px;text-align:center">
+    <img src="/static/images/logo.jpg" alt="Royale-Med" style="width:140px;border-radius:6px;margin-bottom:4px">
+    <div style="font-size:11px;color:#64748b;letter-spacing:1px">מערכת AI</div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/dashboard"      class="nav-item <%- endpoint==='/dashboard'?'active':'' %>"><span class="nav-icon">⊞</span><span>לוח בקרה</span></a>
+    <a href="/diagnosis"      class="nav-item <%- endpoint==='/diagnosis'?'active':'' %>"><span class="nav-icon">🔬</span><span>פענוח ואבחון</span></a>
+    <a href="/visualization"  class="nav-item <%- endpoint==='/visualization'?'active':'' %>"><span class="nav-icon">✨</span><span>הדמיית לפני/אחרי</span></a>
+    <a href="/chat"           class="nav-item <%- endpoint==='/chat'?'active':'' %>"><span class="nav-icon">💬</span><span>עוזר AI</span></a>
+    <a href="/agents"         class="nav-item <%- endpoint.startsWith('/agents')?'active':'' %>"><span class="nav-icon">🤖</span><span>Agents שלי</span></a>
+    <a href="/leads"          class="nav-item <%- endpoint.startsWith('/leads')?'active':'' %>"><span class="nav-icon">🎯</span><span>לידים</span></a>
+    <a href="/whatsapp-bot"   class="nav-item <%- endpoint==='/whatsapp-bot'?'active':'' %>"><span class="nav-icon">💚</span><span>בוט וואטסאפ</span></a>
+    <a href="/patients"       class="nav-item <%- endpoint.startsWith('/patients')?'active':'' %>"><span class="nav-icon">👥</span><span>מטופלים</span></a>
+    <a href="/settings"       class="nav-item <%- endpoint==='/settings'?'active':'' %>"><span class="nav-icon">⚙</span><span>הגדרות</span></a>
+    <% if (session.role === 'admin') { %>
+    <a href="/users"          class="nav-item <%- endpoint==='/users'?'active':'' %>"><span class="nav-icon">🔑</span><span>ניהול משתמשים</span></a>
+    <a href="/activity-log"   class="nav-item <%- endpoint==='/activity-log'?'active':'' %>"><span class="nav-icon">📋</span><span>לוג פעילות</span></a>
+    <% } %>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="font-size:0.8rem;color:#94a3b8;margin-bottom:0.5rem;padding:0 0.5rem">
+      <%= session.full_name || session.username %>
+      <% if (session.role==='admin') { %><span style="color:#a78bfa"> | מנהל</span><% } %>
+      <% if (session.role==='therapist') { %><span style="color:#60a5fa"> | מטפל</span><% } %>
+    </div>
+    <a href="/logout" class="logout-btn">יציאה</a>
+    <div class="version-tag">v2.0</div>
+  </div>
+</div>
+<button class="hamburger" style="display:none" onclick="toggleSidebar()" aria-label="תפריט"><span></span></button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>מטופלים | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<% if (flashes.success) { %><div class="flash-message flash-success"><%= flashes.success[0] %></div><% } %>
+
+<div class="page-header">
+  <h1 class="page-title">👥 ניהול מטופלים</h1>
+  <button onclick="document.getElementById('newPatientModal').style.display='flex'" class="btn btn-primary">+ הוסף מטופל</button>
+</div>
+
+<form method="GET" action="/patients" class="search-row">
+  <input type="text" name="q" value="<%= query %>" class="form-input search-input" placeholder="חיפוש לפי שם או טלפון...">
+  <button type="submit" class="btn btn-primary">חפש</button>
+  <% if (query) { %><a href="/patients" class="btn btn-outline">הצג הכל</a><% } %>
+</form>
+
+<% if (patients && patients.length) { %>
+<div class="table-container">
+  <table class="data-table">
+    <thead><tr><th>שם</th><th>טלפון</th><th>גיל</th><th>סוג עור</th><th>בעיות</th><th>קופת חולים</th><th>הצטרף</th><th>פעולות</th></tr></thead>
+    <tbody>
+    <% for (const p of patients) { %>
+    <tr>
+      <td><strong><%= p.name %></strong></td>
+      <td><%= p.phone || '—' %></td>
+      <td><%= p.birth_year ? 2026 - p.birth_year : '—' %></td>
+      <td><%= p.skin_type || '—' %></td>
+      <td>
+        <% if (p.problems) { p.problems.split(',').forEach(prob => { prob = prob.trim(); if (prob) { %><span class="badge badge-blue" style="font-size:11px;margin:1px"><%= prob %></span><% }}); } else { %>—<% } %>
+      </td>
+      <td><%= p.health_insurance || '—' %></td>
+      <td><%= p.created_at.slice(0,10) %></td>
+      <td style="display:flex;gap:6px;align-items:center">
+        <a href="/patients/<%= p.id %>" class="btn btn-outline btn-sm">היסטוריה</a>
+        <form method="POST" action="/patients/<%= p.id %>/delete" onsubmit="return confirm('למחוק את <%= p.name %>?')">
+          <button type="submit" class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:none;cursor:pointer">מחק</button>
+        </form>
+      </td>
+    </tr>
+    <% } %>
+    </tbody>
+  </table>
+</div>
+<% } else { %>
+<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">אין מטופלים עדיין</div><div class="empty-desc">הוסף מטופל ראשון כדי להתחיל</div></div>
+<% } %>
+
+<div class="modal-overlay" id="newPatientModal" style="display:none" onclick="closeModal(event)">
+  <div class="modal-card" style="max-width:560px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">הוסף מטופל חדש</div>
+    <form method="POST" action="/patients/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group"><label class="form-label">שם מלא *</label><input type="text" name="name" class="form-input" required placeholder="שם פרטי ומשפחה"></div>
+        <div class="form-group"><label class="form-label">טלפון</label><input type="text" name="phone" class="form-input" placeholder="050-0000000"></div>
+        <div class="form-group"><label class="form-label">שנת לידה</label><input type="number" name="birth_year" class="form-input" placeholder="1985" min="1920" max="2010"></div>
+        <div class="form-group"><label class="form-label">קופת חולים</label>
+          <select name="health_insurance" class="form-input form-select"><option value="">— לא צוין —</option><option>כללית</option><option>מכבי</option><option>מאוחדת</option><option>לאומית</option><option>ללא</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">סוג עור (Fitzpatrick)</label>
+        <select name="skin_type" class="form-input form-select"><option value="">— לא ידוע —</option><option>Type I</option><option>Type II</option><option>Type III</option><option>Type IV</option><option>Type V</option><option>Type VI</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">בעיות / מצבים</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px;border:1px solid var(--border);border-radius:8px">
+          <% ['פיגמנטציה','אקנה','קמטים','רפיון עור','צלקות','נשירת שיער','צלוליט','סימני מתיחה','עור יבש','עור שמן','רוזציאה','מלזמה'].forEach(prob => { %>
+          <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer"><input type="checkbox" name="problems" value="<%= prob %>"> <%= prob %></label>
+          <% }) %>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">הערות</label><textarea name="notes" class="form-input form-textarea" rows="2" placeholder="אלרגיות, מחלות רקע..."></textarea></div>
+      <div class="modal-actions">
+        <button type="button" onclick="document.getElementById('newPatientModal').style.display='none'" class="btn btn-outline">ביטול</button>
+        <button type="submit" class="btn btn-primary">הוסף מטופל</button>
+      </div>
+    </form>
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+function closeModal(e){if(e.target.id==='newPatientModal')e.target.style.display='none';}
+</script>
+</body></html>

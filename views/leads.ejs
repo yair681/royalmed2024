@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>לידים | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <div>
+    <h1 class="page-title">🎯 ניהול לידים</h1>
+    <p class="page-subtitle">לקוחות פוטנציאליים ומעקב מכירות</p>
+  </div>
+  <a href="/leads/new" class="btn btn-primary">+ הוסף ליד</a>
+</div>
+
+<div style="margin-bottom:20px">
+  <input type="text" id="leadSearch" class="form-input" placeholder="🔍 חפש לפי שם, טלפון, מייל, טיפול, מקור..." oninput="filterLeads()" style="max-width:500px">
+</div>
+
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px">
+  <a href="/leads" class="btn btn-sm <%= !activeFilter ? 'btn-primary' : 'btn-outline' %>">הכל (<%= leads.length %>)</a>
+  <% for (const s of statuses) { %>
+  <a href="/leads?status=<%= encodeURIComponent(s) %>" class="btn btn-sm <%= activeFilter===s ? 'btn-primary' : 'btn-outline' %>"><%= s %> (<%= counts[s]||0 %>)</a>
+  <% } %>
+</div>
+
+<% if (leads.length) { %>
+<div class="table-container">
+  <table class="data-table">
+    <thead><tr><th>שם</th><th>טלפון</th><th>טיפול מעניין</th><th>מקור</th><th>סטטוס</th><th>תאריך</th><th>פעולות</th></tr></thead>
+    <tbody>
+      <% for (const lead of leads) { %>
+      <tr id="lead-row-<%= lead.id %>" data-search="<%= [lead.full_name,lead.phone,lead.email,lead.treatment_interest,lead.source,lead.description,lead.notes,lead.status].filter(Boolean).join(' ').toLowerCase() %>">
+        <td>
+          <a href="/leads/<%= lead.id %>" style="color:var(--text);text-decoration:none"><strong><%= lead.full_name %></strong></a>
+          <% if (lead.age) { %><span style="color:#94a3b8;font-size:12px"> (<%= lead.age %>)</span><% } %>
+          <% if (lead.email) { %><div style="font-size:12px;color:#64748b"><%= lead.email %></div><% } %>
+        </td>
+        <td><%= lead.phone || '—' %></td>
+        <td><%= lead.treatment_interest || '—' %></td>
+        <td><span class="badge badge-blue"><%= lead.source %></span></td>
+        <td>
+          <select class="status-select" onchange="updateStatus(<%= lead.id %>,this.value)" style="border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:13px;background:var(--surface);color:var(--text)">
+            <% for (const s of statuses) { %><option value="<%= s %>" <%= lead.status===s?'selected':'' %>><%= s %></option><% } %>
+          </select>
+        </td>
+        <td style="color:#64748b;font-size:13px"><%= lead.created_at ? lead.created_at.slice(0,10) : '' %></td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <a href="/leads/<%= lead.id %>/edit" class="btn btn-outline btn-sm">✏️</a>
+            <button onclick="deleteLead(<%= lead.id %>)" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none">🗑</button>
+          </div>
+        </td>
+      </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+<% } else { %>
+<div style="text-align:center;padding:60px;color:#64748b">
+  <div style="font-size:48px;margin-bottom:16px">🎯</div>
+  <div style="font-size:18px;margin-bottom:8px">אין לידים עדיין</div>
+  <a href="/leads/new" class="btn btn-primary" style="margin-top:16px">+ הוסף ליד ראשון</a>
+</div>
+<% } %>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+async function updateStatus(id,status){await fetch(`/api/leads/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});}
+function filterLeads(){const q=document.getElementById('leadSearch').value.toLowerCase();document.querySelectorAll('tbody tr').forEach(row=>{row.style.display=row.dataset.search.includes(q)?'':' none';});}
+async function deleteLead(id){if(!confirm('למחוק ליד זה?'))return;const res=await fetch(`/api/leads/${id}/delete`,{method:'POST'});const data=await res.json();if(data.success)document.getElementById(`lead-row-${id}`).remove();}
+</script>
+</body></html>

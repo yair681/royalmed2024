@@ -1,0 +1,5 @@
+node_modules/
+.env
+data/royal_med.db
+static/uploads/
+*.log

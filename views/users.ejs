@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ניהול משתמשים | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <h1 class="page-title">ניהול משתמשים</h1>
+  <p class="page-subtitle">הוספה, עריכה ומחיקה של עובדי המרפאה</p>
+</div>
+
+<div class="card" style="margin-bottom:2rem">
+  <div class="card-title">➕ הוספת משתמש חדש</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
+    <div class="form-group" style="margin:0"><label class="form-label">שם משתמש</label><input type="text" id="newUsername" class="form-input" placeholder="dana123"></div>
+    <div class="form-group" style="margin:0"><label class="form-label">שם מלא</label><input type="text" id="newFullName" class="form-input" placeholder="דנה לוי"></div>
+    <div class="form-group" style="margin:0"><label class="form-label">מייל</label><input type="email" id="newEmail" class="form-input" placeholder="dana@clinic.com"></div>
+    <div class="form-group" style="margin:0"><label class="form-label">סיסמה</label><input type="password" id="newPassword" class="form-input" placeholder="סיסמה..."></div>
+    <div class="form-group" style="margin:0"><label class="form-label">תפקיד</label>
+      <select id="newRole" class="form-input">
+        <option value="therapist">מטפל</option>
+        <option value="consultant">יועץ</option>
+        <option value="admin">מנהל</option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:flex-end"><button onclick="createUser()" class="btn btn-primary" style="width:100%">הוסף משתמש</button></div>
+  </div>
+  <div id="createMsg" style="font-size:0.9rem"></div>
+</div>
+
+<div class="table-container">
+  <table class="data-table">
+    <thead><tr><th>שם משתמש</th><th>שם מלא</th><th>תפקיד</th><th>סטטוס</th><th>נוצר</th><th>פעולות</th></tr></thead>
+    <tbody>
+      <% for (const user of users) { %>
+      <tr id="user-row-<%= user.id %>">
+        <td><strong><%= user.username %></strong></td>
+        <td><%= user.full_name %></td>
+        <td>
+          <% if (user.role==='admin') { %><span class="badge badge-purple">מנהל</span>
+          <% } else if (user.role==='therapist') { %><span class="badge badge-blue">מטפל</span>
+          <% } else if (user.role==='consultant') { %><span class="badge badge-teal">יועץ</span>
+          <% } else { %><span class="badge badge-blue">עובד</span><% } %>
+        </td>
+        <td>
+          <% if (user.active) { %><span class="badge" style="background:#dcfce7;color:#166534">פעיל</span>
+          <% } else { %><span class="badge" style="background:#fee2e2;color:#991b1b">מושהה</span><% } %>
+        </td>
+        <td><%= user.created_at ? user.created_at.slice(0,10) : '' %></td>
+        <td>
+          <% if (user.role !== 'admin') { %>
+          <button onclick="toggleUser(<%= user.id %>,this)" class="btn btn-sm" style="background:<%= user.active?'#fef3c7':'#dcfce7' %>;color:#374151;margin-left:0.5rem"><%= user.active?'השהה':'הפעל' %></button>
+          <button onclick="deleteUser(<%= user.id %>)" class="btn btn-sm" style="background:#fee2e2;color:#991b1b">מחק</button>
+          <% } else { %><span style="color:#94a3b8;font-size:0.85rem">—</span><% } %>
+        </td>
+      </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}
+document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));
+
+async function createUser() {
+  const username=document.getElementById('newUsername').value.trim();
+  const full_name=document.getElementById('newFullName').value.trim();
+  const password=document.getElementById('newPassword').value.trim();
+  const role=document.getElementById('newRole').value;
+  const email=document.getElementById('newEmail').value.trim();
+  const msg=document.getElementById('createMsg');
+  if (!username||!full_name||!password){msg.innerHTML='<span style="color:#ef4444">יש למלא את כל השדות</span>';return;}
+  const res=await fetch('/api/users/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,full_name,password,role,email})});
+  const data=await res.json();
+  if (data.success){msg.innerHTML='<span style="color:#22c55e">✅ המשתמש נוצר — רענן...</span>';setTimeout(()=>location.reload(),1000);}
+  else msg.innerHTML=`<span style="color:#ef4444">❌ ${data.error}</span>`;
+}
+async function deleteUser(userId){if(!confirm('האם למחוק את המשתמש לצמיתות?'))return;const res=await fetch(`/api/users/${userId}/delete`,{method:'POST'});const data=await res.json();if(data.success)document.getElementById(`user-row-${userId}`).remove();else alert(data.error);}
+async function toggleUser(userId,btn){const res=await fetch(`/api/users/${userId}/toggle`,{method:'POST'});const data=await res.json();if(data.success)location.reload();else alert(data.error);}
+</script>
+</body></html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>לוח בקרה | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<% if (flashes.success) { %><div class="flash-message flash-success"><%= flashes.success[0] %></div><% } %>
+<% if (flashes.error) { %><div class="flash-message flash-error"><%= flashes.error[0] %></div><% } %>
+
+<div class="page-header">
+  <h1 class="page-title">לוח בקרה</h1>
+  <p class="page-subtitle">ברוכים הבאים למערכת AI של רויאל-מד</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-icon blue">👥</div><div class="stat-info"><div class="stat-number"><%= stats.total_patients %></div><div class="stat-label">מטופלים</div></div></div>
+  <div class="stat-card"><div class="stat-icon teal">🔬</div><div class="stat-info"><div class="stat-number"><%= stats.total_diagnoses %></div><div class="stat-label">אבחונים</div></div></div>
+  <div class="stat-card"><div class="stat-icon purple">✨</div><div class="stat-info"><div class="stat-number"><%= stats.total_visualizations %></div><div class="stat-label">הדמיות</div></div></div>
+  <div class="stat-card"><div class="stat-icon green">📅</div><div class="stat-info"><div class="stat-number"><%= stats.today_consultations %></div><div class="stat-label">ייעוצים היום</div></div></div>
+</div>
+
+<div class="section-title">פעולות מהירות</div>
+<div class="quick-actions">
+  <a href="/diagnosis" class="action-card"><div class="action-icon">🔬</div><div class="action-title">פענוח בדיקה</div><div class="action-desc">העלה תמונת בדיקה לניתוח AI</div></a>
+  <a href="/visualization" class="action-card"><div class="action-icon">✨</div><div class="action-title">הדמיית לפני/אחרי</div><div class="action-desc">הדמיה ויזואלית של תוצאת טיפול</div></a>
+  <a href="/chat" class="action-card"><div class="action-icon">💬</div><div class="action-title">עוזר AI</div><div class="action-desc">שאל שאלות מקצועיות</div></a>
+  <a href="/patients" class="action-card"><div class="action-icon">👥</div><div class="action-title">מטופלים</div><div class="action-desc">ניהול היסטוריית מטופלים</div></a>
+</div>
+
+<% if (recent && recent.length) { %>
+<div class="section-title">פעולות אחרונות</div>
+<div class="table-container">
+  <table class="data-table">
+    <thead><tr><th>תאריך</th><th>מטופל</th><th>סוג</th><th>מודל AI</th></tr></thead>
+    <tbody>
+    <% for (const c of recent) { %>
+    <tr>
+      <td><%= c.created_at.slice(0,16) %></td>
+      <td><%= c.patient_name || 'לא צוין' %></td>
+      <td><span class="badge <%- c.consultation_type==='diagnosis'?'badge-blue':'badge-purple' %>"><%= c.consultation_type==='diagnosis'?'אבחון':'הדמיה' %></span></td>
+      <td><%= c.model_used || '—' %></td>
+    </tr>
+    <% } %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<div style="margin-top:40px;padding:20px;background:#fff;border-radius:12px;border:1px solid var(--border);text-align:center">
+  <div style="font-size:12px;color:#94a3b8;margin-bottom:14px;letter-spacing:1px">AUTHORIZED BY</div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:32px;flex-wrap:wrap">
+    <img src="/static/images/moh.png" alt="משרד הבריאות" style="height:40px;object-fit:contain;filter:grayscale(20%);opacity:0.8">
+    <img src="/static/images/clalit.svg" alt="כללית" style="height:32px;object-fit:contain;opacity:0.8">
+    <img src="/static/images/maccabi.svg" alt="מכבי" style="height:32px;object-fit:contain;opacity:0.8">
+    <img src="/static/images/meuhedet.png" alt="מאוחדת" style="height:32px;object-fit:contain;opacity:0.8">
+    <img src="/static/images/leumit.png" alt="לאומית" style="height:32px;object-fit:contain;opacity:0.8">
+  </div>
+</div>
+</div>
+<script src="/static/js/app.js"></script>
+<script>function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));</script>
+</body></html>

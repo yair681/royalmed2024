@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>רויאל-מד | כניסה למערכת</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo">
+        <img src="/static/images/logo.jpg" alt="Royale-Med" style="width:200px;margin-bottom:12px;border-radius:4px">
+        <p class="login-subtitle">מערכת AI פנימית | כניסת צוות בלבד</p>
+      </div>
+      <div class="login-divider"></div>
+      <% if (error) { %>
+      <div class="login-error"><span>⚠</span> <%= error %></div>
+      <% } %>
+      <form method="POST" action="/login" class="login-form">
+        <div class="form-group">
+          <label class="form-label">שם משתמש</label>
+          <input type="text" name="username" class="form-input login-input" placeholder="הזן שם משתמש..." autofocus required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">סיסמה</label>
+          <input type="password" name="password" class="form-input login-input" placeholder="הזן סיסמה..." required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full login-btn">כניסה למערכת</button>
+      </form>
+      <p class="login-note">🔒 מערכת סגורה לשימוש צוות המרפאה בלבד</p>
+    </div>
+  </div>
+</body>
+</html>

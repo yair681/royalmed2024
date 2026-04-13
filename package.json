@@ -1,0 +1,25 @@
+{
+  "name": "royal-med-ai",
+  "version": "1.0.0",
+  "description": "RoyalMed AI - Medical Aesthetics System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "pkg server.js --targets node18-win-x64 --output ../ללקוח/RoyalMed-AI.exe --assets views/**,static/**,data/**"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "connect-flash": "^0.1.1",
+    "ejs": "^3.1.9",
+    "bcryptjs": "^2.4.3",
+    "multer": "^2.0.0",
+    "openai": "^4.40.0",
+    "dotenv": "^16.4.5",
+    "uuid": "^9.0.0"
+  },
+  "pkg": {
+    "assets": ["views/**/*", "static/**/*", "data/**/*"],
+    "targets": ["node22-win-x64"]
+  }
+}

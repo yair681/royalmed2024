@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>לוג פעילות | רויאל-מד</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<%- include('partials/nav') %>
+<div class="main-content">
+<div class="page-header">
+  <h1 class="page-title">📋 לוג פעילות</h1>
+  <p class="page-subtitle">רישום כל הפעולות שבוצעו במערכת</p>
+</div>
+
+<% if (logs && logs.length) { %>
+<div class="table-container">
+  <table class="data-table">
+    <thead><tr><th>תאריך ושעה</th><th>משתמש</th><th>פעולה</th><th>פרטים</th><th>IP</th></tr></thead>
+    <tbody>
+      <% for (const log of logs) { %>
+      <tr>
+        <td style="white-space:nowrap;font-size:13px"><%= log.created_at ? log.created_at.slice(0,16) : '' %></td>
+        <td><strong><%= log.username || '—' %></strong></td>
+        <td>
+          <span class="badge <%= log.action && log.action.includes('כניסה') ? 'badge-green' : log.action && log.action.includes('מחק') ? 'badge-red' : 'badge-blue' %>">
+            <%= log.action %>
+          </span>
+        </td>
+        <td style="font-size:13px"><%= log.details || '—' %></td>
+        <td style="font-size:12px;color:var(--text-muted)"><%= log.ip_address || '—' %></td>
+      </tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+<% } else { %>
+<div class="empty-state">
+  <div class="empty-icon">📋</div>
+  <div class="empty-title">אין רשומות עדיין</div>
+</div>
+<% } %>
+</div>
+<script src="/static/js/app.js"></script>
+<script>function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('open');}document.querySelectorAll('.nav-item').forEach(a=>a.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}));</script>
+</body></html>
